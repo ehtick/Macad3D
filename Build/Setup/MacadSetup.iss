@@ -10,8 +10,7 @@
 
 #define BasePath "..\..\"
 
-#include "..\..\.intermediate\Build\Setup\_GeneratedDefinitions.iss"
-#include "_Dependencies.iss"
+#include "..\..\.intermediate\Build\Deploy\_GeneratedDefinitions.iss"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -27,7 +26,6 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 AppCopyright=Copyright (c) {#MyAppPublisher}
 AppMutex=MacadInstanceRunning,Global\MacadInstanceRunning
-LicenseFile=..\..\License.txt
 
 DefaultDirName={autopf64}\{#MyAppName}
 DefaultGroupName={#MyAppName}
@@ -45,19 +43,24 @@ UninstallDisplayName={#MyAppTitle}
 UninstallDisplayIcon={app}\Macad.exe
 
 MinVersion=0,10.0
-WizardSmallImageFile=WizModernSmallImage.bmp
-WizardImageFile=WizModernImage.bmp
+InternalCompressLevel=max
+SolidCompression=True
+ChangesAssociations=True
+
 AlwaysShowComponentsList=False
 ShowComponentSizes=False
 AllowUNCPath=False
-InternalCompressLevel=max
 ShowLanguageDialog=no
 LanguageDetectionMethod=none
-SolidCompression=True
 AlwaysShowDirOnReadyPage=True
-ChangesAssociations=True
-DisableWelcomePage=True
-DisableStartupPrompt=False
+DisableWelcomePage=False
+DisableStartupPrompt=True
+DisableReadyMemo=True
+DisableReadyPage=True
+
+WizardStyle=classic dynamic
+WizardSmallImageFile=WizModernSmallImage.bmp
+WizardImageFile=WizModernImage.bmp
 
 ;///////////////////////////////////////////////////////////////////////////////
 DisableProgramGroupPage=yes
@@ -79,12 +82,6 @@ Name: "fileassoc_step"; Description: "STEP Drawing Exchange File (*.step;*.stp)"
 
 [Dirs]
 Name: "{app}\Samples"; Flags: uninsalwaysuninstall
-
-;///////////////////////////////////////////////////////////////////////////////
-
-[Files]
-Source: "{#VcRedistDir}\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall dontcopy solidbreak
-Source: "{#DotNetRedistPath}"; DestDir: "{tmp}"; Flags: deleteafterinstall dontcopy solidbreak
 
 ;///////////////////////////////////////////////////////////////////////////////
 
@@ -144,19 +141,101 @@ Filename: "{app}\{#MyAppExeName}"; Flags: nowait postinstall skipifsilent; Descr
 
 ;///////////////////////////////////////////////////////////////////////////////
 
-[ThirdParty]
-UseRelativePaths=True
-
-;///////////////////////////////////////////////////////////////////////////////
-
 [Code]
+procedure RunAndWaitForUninstaller(UninstallerPath: string);
 var
-  dependenciesNeedRestart: Boolean;
+  ResultCode: Integer;
+  MaxWaitTime: Integer;
+  ElapsedTime: Integer;
+begin
+  // Execute the uninstaller and wait for it to exit
+  if Exec(UninstallerPath, '/SILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then 
+  begin
+    // Wait for the exe file to be deleted (max 30 seconds)
+    MaxWaitTime := 30000; // 30 seconds in milliseconds
+    ElapsedTime := 0;
+    while FileExists(UninstallerPath) and (ElapsedTime < MaxWaitTime) do 
+    begin
+      Sleep(100);
+      ElapsedTime := ElapsedTime + 100;
+    end;
+  end;
+end;
+
+///////////////////////////////////////////////////////////////////////////////
+
+procedure UnInstallOldVersion();
+var
+  InstallPath: string;
+  MacadExePath: string;
+  UninstallerPath: string;
+  i: Integer;
+  UninstallerFound: Boolean;
+  ElapsedTime: Integer;
+begin
+  // Get the installation target directory
+  InstallPath := ExpandConstant('{app}');
+  if DirExists(InstallPath) then 
+  begin
+    MacadExePath := InstallPath + '\Macad.exe';
+    if FileExists(MacadExePath) then 
+    begin
+      // Check for uninstallers (unins000.exe, unins001.exe, etc.)
+      UninstallerFound := False;
+      i := 0;
+      while i < 100 do begin
+        UninstallerPath := InstallPath + '\unins' + Format('%.3d', [i]) + '.exe';
+        if FileExists(UninstallerPath) then 
+        begin
+          UninstallerFound := True;
+          RunAndWaitForUninstaller(UninstallerPath);
+        end else begin
+          if UninstallerFound then begin
+            break;
+          end;
+        end;
+        i := i + 1;
+      end;
+    end;
+    
+    // After all uninstallers are done, wait for the installation directory to be cleaned up
+    Sleep(500);
+  
+    ElapsedTime := 0;
+    // Wait for the directory to be deleted by the uninstaller
+    while DirExists(InstallPath) and (ElapsedTime < 10000) do 
+    begin
+      Sleep(200);
+      ElapsedTime := ElapsedTime + 200;
+    end;
+  end;
+end;
+
+///////////////////////////////////////////////////////////////////////////////
+
+function PrepareToInstall(var NeedsRestart: Boolean): string;
+var
+  WasVisible: Boolean;
+begin
+  result := '';
+  WasVisible := WizardForm.PreparingLabel.Visible;
+  try
+    WizardForm.PreparingLabel.Visible := True;
+    WizardForm.PreparingLabel.Caption := 'Uninstalling old versions...';
+    UnInstallOldVersion();
+  finally
+    WizardForm.PreparingLabel.Visible := WasVisible;
+  end;
+end;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 procedure InitializeWizard(); 
 begin 
+  // Hide filenames on InstallingPage
+  WizardForm.FilenameLabel.Visible := False;
+
+  // Check architecture and warn if it does not match the application requirements
   if ProcessorArchitecture <> pax64 then begin
     if TaskDialogMsgBox('Incompatible Architecture Detected',
                      'The application you are attempting to install is designed for the x64 architecture.'#13#10'However, it appears that you are running this installer on a system based on a different architecture.'#13#10#13#10'The application may not function correctly or at all on this system. Even if the system is capable of emulating x64 architecture, performance may be significantly impacted.',
@@ -167,48 +246,6 @@ begin
       Abort();
     end;
   end;
-  
-  CheckDependencies();
 end;
 
 ///////////////////////////////////////////////////////////////////////////////
-
-function PrepareToInstall(var NeedsRestart: Boolean): String;
-var
-  resultFromDependencies: String;
-  Page: TOutputMsgWizardPage;
-begin
-  Result := '';
-
-  dependenciesNeedRestart := False;
-  resultFromDependencies := InstallDependencies(dependenciesNeedRestart);
-  if resultFromDependencies <> '' then begin
-    Page := CreateOutputMsgPage( wpPreparing, 'Installing dependencies failed', 
-									'Setup was not successful installing all dependencies.',
-									resultFromDependencies + #13#10 +
-									'Please try to download and install the dependency manually. ' + #13#10
-									'Maybe you have everything already installed, and the program just runs.');
-  end
-end;
-
-///////////////////////////////////////////////////////////////////////////////
-
-function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo, MemoTypeInfo,
-  MemoComponentsInfo, MemoGroupInfo, MemoTasksInfo: String): String;
-var
-  s: String;
-begin
-	s := GetDependenciesMemo(Space, NewLine) + MemoDirInfo;
-
-	if MemoTasksInfo <> '' then
-		s := s + NewLine + NewLine + MemoTasksInfo;
-
-	Result := s;
-end;
-
-///////////////////////////////////////////////////////////////////////////////
-
-function NeedRestart(): Boolean;
-begin
-  Result := dependenciesNeedRestart;
-end;

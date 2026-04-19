@@ -14,14 +14,20 @@ public static class Common
     {
         try
         {
-            var info = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(path), commandline);
-            info.UseShellExecute = useShell;
-            info.ErrorDialog = false;
+            var info = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(path), commandline)
+            {
+                UseShellExecute = useShell,
+                ErrorDialog = false,
+            };
             if (!string.IsNullOrEmpty(workingDir))
+            {
                 info.WorkingDirectory = Environment.ExpandEnvironmentVariables(workingDir);
-            var proc = new Process();
-            proc.StartInfo = info;
+            }
 
+            var proc = new Process
+            {
+                StartInfo = info
+            };
             if (output != null)
             {
                 proc.StartInfo.RedirectStandardOutput = true;

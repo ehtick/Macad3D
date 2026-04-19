@@ -4,14 +4,6 @@
 #load "_Version.csx"
 #load "_Packages.csx"
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Linq;
-using System.Reflection;
-
 if (Args.Count() < 1)
 {
     Printer.Line("Usage: deploy <setup, symstore>");
@@ -53,27 +45,65 @@ return 0;
 
 /***************************************************************/
 
-static Dictionary<string, List<string>> FileSets = new Dictionary<string, List<string>> {
-    { "app", new List<string> {
-        @"Bin\Publish\*.exe",
-        @"Bin\Publish\*.dll",
-        @"Bin\Publish\*.xml",
-        @"Bin\Publish\*.json",
-    }},
-    { "shellext", new List<string> {
-        @"Bin\Release\Macad.ShellExtension.dll",
-    }},
-    { "samples", new List<string> {
-        @"Data\Samples\*.*",
-    }},
-};
+record FileSet
+{
+    public string Name;
+    public string SourceDir;
+    public string TargetDir;
+    public string Flags;
+    public List<string> Files;
+}
 
 /***************************************************************/
 
-static Dictionary<string, string> TargetDirectories = new Dictionary<string, string> {
-    { "app",        @"{app}" },
-    { "shellext",   @"{app}" },
-    { "samples",    @"{app}\Samples" },
+static List<FileSet> FileSets = new List<FileSet> {
+    {
+        new FileSet {
+            Name = "app",
+            TargetDir = @"{app}",
+            SourceDir = @"Bin\Publish",
+            Flags = "ignoreversion",
+            Files = new List<string> {
+                "*.exe",
+                "*.dll",
+                "*.xml",
+                "*.json"
+            }
+        }
+    },
+    {
+        new FileSet {
+            Name = "shellext",
+            TargetDir = @"{app}",
+            SourceDir = @"Bin\Release",
+            Flags = "ignoreversion 64bit restartreplace regserver uninsrestartdelete",
+            Files = new List<string> {
+                "Macad.ShellExtension.dll",
+            }
+        }
+    },
+    {
+        new FileSet {
+            Name = "dotnetruntime",
+            TargetDir = @"{app}\DotNetRuntime",
+            SourceDir = @"Bin\Publish\DotNetRuntime",
+            Flags = "ignoreversion",
+            Files = new List<string> {
+                @"**\*.*",
+            }
+        }
+    },
+    {
+        new FileSet {
+            Name = "samples",
+            SourceDir = @"Data\Samples",
+            TargetDir = @"{app}\Samples",
+            Flags = "ignoreversion",
+            Files = new List<string> {
+                @"*.*",
+            }
+        }
+    },
 };
 
 /***************************************************************/
@@ -96,20 +126,29 @@ bool _EnsureVS()
 bool _ResolveFileList()
 {
     var rootPath = Common.GetRootFolder();
-    foreach (var files in FileSets)
+    foreach (var fileSet in FileSets)
     {
-        foreach (var file in files.Value.ToArray())
+        foreach (var item in fileSet.Files.ToArray())
         {
+            var file = item;
             if(file.IndexOf('*') < 0)
                 continue;
+            fileSet.Files.Remove(item);
 
-            string fileDir = Path.GetDirectoryName(file);
-            string fileName = Path.GetFileName(file);
-            foreach(var wcfile in Directory.EnumerateFiles(Path.Combine(rootPath, fileDir), Path.GetFileName(fileName)))
+            SearchOption soption = SearchOption.TopDirectoryOnly;
+            if (file.Contains(@"**\"))
             {
-                files.Value.Add(Path.Combine(fileDir, Path.GetFileName(wcfile)));
+                file = file.Replace(@"**\", "");
+                soption = SearchOption.AllDirectories;
             }
-            files.Value.Remove(file);
+
+            string fileDir = Path.Combine(rootPath, fileSet.SourceDir, Path.GetDirectoryName(file));
+            string fileName = Path.GetFileName(file);
+            foreach(var wcfile in Directory.EnumerateFiles(fileDir, fileName, soption))
+            {
+                var relativeDir = Utils.GetRelativePath(fileDir, Path.GetDirectoryName(wcfile));
+                fileSet.Files.Add(Path.Combine(relativeDir, Path.GetFileName(wcfile)));
+            }
         }
     }
     return true;
@@ -126,24 +165,9 @@ bool _BuildSetup()
 	if(string.IsNullOrEmpty(setupCompilerPath))
 		return false;
 
-    // Ensure DotNet Redist
-    string dotNetFullVersion = VisualStudio.GetLatestDotNetVersion();
-    if(dotNetFullVersion == null)
-        return false;
-    Printer.Line($"Added prerequisite: DotNet version {dotNetFullVersion}.");
-
-    string dotNetRedistPath = Packages.FindPackageFile($"DotNetRedist", $"windowsdesktop-runtime-{dotNetFullVersion}-win-x64.exe", dotNetFullVersion);
-    if(string.IsNullOrEmpty(dotNetRedistPath))
-        return false;
-
-    // Ensure VC Redist
-    var redistDir = _VS.GetPathToVcRedist();
-    var redistVersion = _VS.GetVersionOfVcRedist();
-    Printer.Line($"Added prerequisite: VcRedist version {string.Join(".", redistVersion)}.");
-
     // Go
     var rootPath = Common.GetRootFolder();
-    var tempPath = Path.Combine(Common.GetRootFolder(), ".intermediate", "Build", "Setup");;
+    var tempPath = Path.Combine(Common.GetRootFolder(), ".intermediate", "Build", "Deploy");;
     Directory.CreateDirectory(tempPath);
     var defFile = File.CreateText(Path.Combine(tempPath, "_GeneratedDefinitions.iss"));
     defFile.WriteLine($"; Generated by deploy script on {DateTime.Now.ToString()}\n");
@@ -159,49 +183,27 @@ bool _BuildSetup()
     defFile.WriteLine($"#define MyAppVersionStr '{major}.{minor}" + (flags==0 ? "'" : $".{revision}_{Version.GetFlagsString(flags)}'"));
     defFile.WriteLine($"#define MyAppRevision '{major}.{minor}.{revision}.{flags}'");
     defFile.WriteLine("");
-    
-    // Write VCRedist definitions
-    defFile.WriteLine($"#define VcRedistDir '{redistDir}'");
-    defFile.WriteLine($"#define VcRedistRelease '{redistVersion[0]}.{redistVersion[1]}'");
-    defFile.WriteLine($"#define VcRedistMajor {redistVersion[0]}");
-    defFile.WriteLine($"#define VcRedistMinor {redistVersion[1]}");
-    defFile.WriteLine($"#define VcRedistBuild {redistVersion[2]}");
-    defFile.WriteLine("");
-
-    // Write DotNet definitions
-    defFile.WriteLine($"#define DotNetVersion '{dotNetFullVersion}'");
-    defFile.WriteLine($"#define DotNetRelease '{VisualStudio.DotNetRelease}'");
-    defFile.WriteLine($"#define DotNetMinPatch {dotNetFullVersion.Split('.')[2]}");
-    defFile.WriteLine($"#define DotNetRuntime '{VisualStudio.DotNetRuntime}'");
-    defFile.WriteLine($"#define DotNetRedistPath '{dotNetRedistPath}'");
-    defFile.WriteLine($"#define DotNetRedistFile '{Path.GetFileName(dotNetRedistPath)}'");
-    defFile.WriteLine("");
 
     // Write Files
     defFile.WriteLine("[Files]");
-    foreach (var files in FileSets)
+    foreach (var fileSet in FileSets)
     {
-        defFile.WriteLine($"; Files of set {files.Key}");
-        var targetDir = TargetDirectories[files.Key];
-        var fileFlags = "ignoreversion";
-        if(files.Key == "shellext")
+        defFile.WriteLine($"; Files of set {fileSet.Name}");
+        var fileFlags = fileSet.Flags;
+        foreach (var file in fileSet.Files)
         {
-            fileFlags += " 64bit restartreplace regserver uninsrestartdelete";
-        }
-
-        foreach (var file in files.Value)
-        {
-            defFile.WriteLine($"Source: \"{rootPath}{file}\"; DestDir: \"{targetDir}\"; Flags: {fileFlags}");
+            var sourceFile = Path.Combine(rootPath, fileSet.SourceDir, file);
+            var targetDir = Path.Combine(fileSet.TargetDir, Path.GetDirectoryName(file));
+            defFile.WriteLine($"Source: \"{sourceFile}\"; DestDir: \"{targetDir}\"; Flags: {fileFlags}");
         }
     }
     defFile.WriteLine("");
-
     defFile.Close();
 
     // Call InnoSetup
     Printer.Line($"\nCalling InnoSetup compiler...");
 
-    var commandLine = $"/Qp \"{rootPath}\\Build\\Setup\\MacadSetup.iss\"";
+    var commandLine = $"/Q \"{rootPath}\\Build\\Setup\\MacadSetup.iss\"";
 
     if (Common.Run(setupCompilerPath, commandLine) != 0)
     {
@@ -225,11 +227,11 @@ bool _SourceIndexPdbs()
 
     Printer.Line("Staring source indexing of pdb files...");
 
-    foreach (var files in FileSets)
+    foreach (var fileSet in FileSets)
     {
-        foreach (var file in files.Value)
+        foreach (var file in fileSet.Files)
         {
-            var pdbPath = Path.Combine(Common.GetRootFolder(), Path.ChangeExtension(file, ".pdb"));
+            var pdbPath = Path.Combine(Common.GetRootFolder(), fileSet.SourceDir, Path.ChangeExtension(file, ".pdb"));
 
             if (File.Exists(pdbPath))
             {
@@ -265,20 +267,22 @@ bool _StoreSymbols(string pathToSymstore)
 
     // Get version
     int major, minor, build, revision;
-    if(!Version.ReadCurrentVersion(out major, out minor, out build, out revision))
+    if (!Version.ReadCurrentVersion(out major, out minor, out build, out revision))
     {
         Printer.Error("Cannot read version information.");
         return false;
     }
-    
+
     // Write file list
-    using (var fileListStream = new StreamWriter("FilesToSymStore.txt", false, Encoding.ASCII))
+    var tempPath = Path.Combine(Common.GetRootFolder(), ".intermediate", "Build", "Deploy", "FilesToSymStore.txt");
+    Directory.CreateDirectory(Path.GetDirectoryName(tempPath));
+    using (var fileListStream = new StreamWriter(tempPath, false, Encoding.ASCII))
     {
-        foreach (var files in FileSets)
+        foreach (var fileSet in FileSets)
         {
-            foreach (var file in files.Value)
+            foreach (var file in fileSet.Files)
             {
-                var path = Path.Combine(Common.GetRootFolder(), file);
+                var path = Path.Combine(Common.GetRootFolder(), fileSet.SourceDir, file);
                 var ext = Path.GetExtension(path).ToLower();
 
                 if (ext == ".exe" || ext == ".dll")
@@ -296,15 +300,15 @@ bool _StoreSymbols(string pathToSymstore)
         }
     }
 
-    var commandLine = $"add /compress /f @FilesToSymStore.txt /s \"{pathToSymstore}\" /t Macad /v {major}.{minor}.{build}.{revision}";
 
+    var commandLine = $"add /compress /f @\"{tempPath}\" /s \"{pathToSymstore}\" /t Macad /v {major}.{minor}.{build}.{revision}";
     if (Common.Run(exePath, commandLine) != 0)
     {
         Printer.Error("Storing symbols failed.");
         return false;
     }
 
-    File.Delete("FilesToSymStore.txt");
+    File.Delete(tempPath);
 
     Printer.Success("\nSymbols stored successfully.");
     return true;
