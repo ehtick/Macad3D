@@ -491,6 +491,38 @@ public class SketchEditorToolTests
     //--------------------------------------------------------------------------------------------------
 
     [Test]
+    public void SnapToAuxPoints()
+    {
+        var ctx = Context.Current;
+
+        var sketch = TestSketchGenerator.CreateSketch(TestSketchGenerator.SketchType.Circle);
+        var body = TestGeomGenerator.CreateBody(sketch);
+        ctx.ViewportController.ZoomFitAll();
+
+        Assert.Multiple(() =>
+        {
+            var sketchEditor = new SketchEditorTool(sketch);
+            ctx.WorkspaceController.StartTool(sketchEditor);
+
+            ctx.Parameters.Get<ViewportParameterSet>().SelectionPixelTolerance = 10;
+            ctx.EditorState.SnappingEnabled = true;
+            ctx.EditorState.SnapToEdgeSelected = true;
+            ctx.EditorState.SnapToAuxSelected = true;
+            ctx.EditorState.SnapToAuxCategories = SnapAuxiliaryCategories.QuadrantPoint;
+            ctx.Workspace.GridEnabled = false;
+            sketchEditor.StartSegmentCreation<SketchSegmentLineCreator>();
+
+            ctx.MoveTo(102, 184);
+            ctx.MoveTo(250, 88);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
+            AssertHelper.IsSameViewport(Path.Combine(_BasePath, "SnapToAuxPoints01"), 0.1);
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    [Test]
     public void DeleteElements()
     {
         var ctx = Context.Current;

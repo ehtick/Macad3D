@@ -48,7 +48,8 @@ public sealed class Snap2D : SnapBase
 
     public Snap2D()
     {
-        SupportedModes = SnapModes.Grid | SnapModes.Edge | SnapModes.Vertex;
+        SupportedModes = SnapModes.Grid | SnapModes.Edge | SnapModes.Vertex | SnapModes.Auxiliary;
+        ShowVisualsTopmost = true;
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -184,7 +185,7 @@ public sealed class Snap2D : SnapBase
         var distance = pointOnPlane.Distance(snapPoint);
         return new SnapInfo2D(mode, snapPoint, distance)
         {
-            TargetName = targetName
+            TargetName = AuxiliaryContext?.TryGetAuxTargetName(aisObject) ?? targetName
         };
     }
 

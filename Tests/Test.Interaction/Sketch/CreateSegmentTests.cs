@@ -95,6 +95,41 @@ public class CreateSegmentTests
     //--------------------------------------------------------------------------------------------------
 
     [Test]
+    public void CreateLine_SnapToTangentPoint()
+    {
+        var ctx = Context.Current;
+
+        var sketch = TestSketchGenerator.CreateSketch(TestSketchGenerator.SketchType.Circle);
+        var body = TestGeomGenerator.CreateBody(sketch);
+        ctx.ViewportController.ZoomFitAll();
+
+        Assert.Multiple(() =>
+        {
+            var sketchEditor = new SketchEditorTool(sketch);
+            ctx.WorkspaceController.StartTool(sketchEditor);
+
+            ctx.Parameters.Get<ViewportParameterSet>().SelectionPixelTolerance = 10;
+            ctx.EditorState.SnappingEnabled = true;
+            ctx.EditorState.SnapToEdgeSelected = true;
+            ctx.EditorState.SnapToAuxSelected = true;
+            ctx.EditorState.SnapToAuxCategories = SnapAuxiliaryCategories.TangentPoint;
+            ctx.Workspace.GridEnabled = false;
+            sketchEditor.StartSegmentCreation<SketchSegmentLineCreator>();
+
+            ctx.ClickAt(0, 463);
+            ctx.MoveTo(86, 322);
+            ctx.MoveTo(106, 321);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
+            AssertHelper.IsSameViewport(Path.Combine(_BasePath, "CreateLine_SnapToTangentPoint01"), 0.1);
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------------------------------
+
+    [Test]
     public void CreateBezier2()
     {
         var ctx = Context.Current;

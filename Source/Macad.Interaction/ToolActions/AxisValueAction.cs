@@ -41,7 +41,7 @@ public class AxisValueAction : ToolAction
     protected override bool OnStart()
     {
         _SnapHandler = SetSnapHandler(new Snap3D());
-        _SnapHandler.SupportedModes = SnapModes.Vertex | SnapModes.Edge;
+        _SnapHandler.SupportedModes = SnapModes.Vertex | SnapModes.Edge | SnapModes.Auxiliary;
         OpenSelectionContext();
         HintLine hintLine = new(WorkspaceController, HintStyle.ThinDashed);
         Add(hintLine);

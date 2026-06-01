@@ -1410,6 +1410,31 @@ public sealed class ViewportController : BaseObject, IDisposable
 
     //--------------------------------------------------------------------------------------------------
 
+    public bool ScreenToPointOnCurve(int screenX, int screenY, Geom_Curve curve, out Pnt resultPnt)
+    {
+        if (IsVisible)
+        {
+            double px = 0, py = 0, pz = 0;
+            V3dView.Convert(screenX, screenY, ref px, ref py, ref pz);
+            var ray = new Geom_Line(new Pnt(px, py, pz), Viewport.GetViewDirection());
+            var extrema = new GeomAPI_ExtremaCurveCurve(curve, ray);
+            if (extrema.NbExtrema() >= 1)
+            {
+                Pnt p1 = new Pnt();
+                Pnt p2 = new Pnt();
+                if (extrema.TotalNearestPoints(ref p1, ref p2))
+                {
+                    resultPnt = p1;
+                    return true;
+                }
+            }
+        }
+        resultPnt = Pnt.Origin;
+        return false;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
     #endregion
 
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Macad.Common;
 using Macad.Occt;
 
@@ -170,4 +171,69 @@ public static class Geom2dUtils
                          : new Geom2d_BSplineCurve(poles, knotsCol, multsCol, degree, isClosed);
         return spline;
     }
+
+    //--------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Finds a parameter on the curve where the tangent goes through the given point. Uses Newton-Raphson iteration.
+    /// </summary>
+    public static bool FindTangentThroughPoint(Geom2d_Curve curve, Pnt2d pnt, ref double u, double umin, double umax, double tolerance = 1e-6, double maxIterations = 100)
+    {
+        for (int iter = 0; iter < maxIterations; ++iter)
+        {
+            Pnt2d c = new();
+            Vec2d d1 = new();
+            Vec2d d2 = new();
+
+            curve.D2(u, ref c, ref d1, ref d2);
+
+            double vx = pnt.X - c.X;
+            double vy = pnt.Y - c.Y;
+            double f = vx * d1.Y - vy * d1.X;
+            double fp = vx * d2.Y - vy * d2.X;
+
+            if (f.Abs() < tolerance)
+                return true;
+
+            if (fp.Abs() < 1e-14)
+                return false;
+
+            double du = f / fp;
+            u -= du;
+            if (u < umin)
+                u = umin;
+            if (u > umax)
+                u = umax;
+            if (du.Abs() < tolerance)
+                return true;
+        }
+
+        return false;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Finds all parameters on the curve where the tangent goes through the given point. Uses sampling and Newton-Raphson iteration.
+    /// </summary>
+    public static List<double> FindAllTangentsThroughPoint(Geom2d_Curve curve, Pnt2d pnt, double umin, double umax, double tolerance = 1e-6, double samples = 20)
+    {
+        List<double> roots = new();
+        for (int i = 0; i <= samples; ++i)
+        {
+            double u = umin + (umax - umin) * i / samples;
+            if (!FindTangentThroughPoint(curve, pnt, ref u, umin, umax, tolerance))
+                continue;
+
+            if(roots.Any(existing => Math.Abs(existing - u) < tolerance))
+                continue;
+
+            roots.Add(u);
+        }
+        roots.Sort();
+        return roots;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
 }

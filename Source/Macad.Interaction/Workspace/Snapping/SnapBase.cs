@@ -1,9 +1,12 @@
-﻿using System;
-using System.Diagnostics;
-using System.Windows;
-using Macad.Common;
+﻿using Macad.Common;
 using Macad.Core;
 using Macad.Occt;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using static Macad.Interaction.ISnapHandler;
+using Point = System.Windows.Point;
 
 namespace Macad.Interaction;
 
@@ -13,24 +16,24 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
     public SnapModes SupportedModes
     {
-        get { return _SupportedModes; }
+        get;
         set
         {
-            _SupportedModes = value; 
+            field = value; 
             RaisePropertyChanged();
             WorkspaceController?.Selection?.Invalidate();
         }
     }
-    
+
     //--------------------------------------------------------------------------------------------------
 
     public SnapInfo CurrentInfo
     {
-        get { return _CurrentInfo; }
+        get;
         set
         {
-            if (Equals(value, _CurrentInfo)) return;
-            _CurrentInfo = value;
+            if (Equals(value, field)) return;
+            field = value;
             RaisePropertyChanged();
             ISnapHandler.RaiseSnapInfoChanged(this);
         }
@@ -40,37 +43,42 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
     public WorkspaceController WorkspaceController
     {
-        get { return _WorkspaceController; }
+        get;
         set
         {
-            Debug.Assert(_WorkspaceController == null || _WorkspaceController == value, "WorkspaceController cannot be changed");
-            _WorkspaceController = value;
+            Debug.Assert(field == null || field == value, "WorkspaceController cannot be changed");
+            field = value;
         }
     }
-        
+
+    //--------------------------------------------------------------------------------------------------
+
+    internal SnapAuxiliaryContext AuxiliaryContext { get; private set; }
+
+    //--------------------------------------------------------------------------------------------------
+
+    protected bool ShowVisualsTopmost { get; set; }
+
     //--------------------------------------------------------------------------------------------------
 
     #endregion
 
     #region Member / n'tor
 
-    SnapModes _SupportedModes;
-    SnapInfo _CurrentInfo;
-    WorkspaceController _WorkspaceController;
-
-    //--------------------------------------------------------------------------------------------------
-
     protected SnapBase()
     {
+        InteractiveContext.Current.EditorState.PropertyChanged += _EditorState_PropertyChanged;
     }
 
     //--------------------------------------------------------------------------------------------------
-    
+
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)
         {
-            CurrentInfo = null;
+            CleanupAux();
+            _InstanceAuxiliaryFunctions?.Clear();
+            InteractiveContext.Current.EditorState.PropertyChanged -= _EditorState_PropertyChanged;
         }
     }
 
@@ -84,20 +92,42 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
     #endregion
 
+    #region Callbacks
+
+    void _EditorState_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(InteractiveContext.EditorState.SnappingEnabled)
+                           or nameof(InteractiveContext.EditorState.SnapToEdgeSelected)
+                           or nameof(InteractiveContext.EditorState.SnapToAuxSelected)
+                           or nameof(InteractiveContext.EditorState.SnapToVertexSelected)
+                           or nameof(InteractiveContext.EditorState.SnapToAuxCategories))
+        {
+            CleanupAux();
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    #endregion
+
     #region Common Snap Functions
 
-    protected (SnapModes mode, Pnt point, Geom_Curve curve) Snap(ViewportController viewportController, Point screenPoint, TopoDS_Shape shapeToSnap)
+    protected (SnapModes Mode, Pnt Point, Geom_Curve Curve) Snap(ViewportController viewportController, Point screenPoint, TopoDS_Shape shapeToSnap)
     {
-        if (shapeToSnap == null) 
+        if (shapeToSnap == null)
+        {
+            CleanupAux();
             return (SnapModes.None, Pnt.Origin, null);
+        }
 
         if (SupportedModes.HasFlag(SnapModes.Vertex)
             && InteractiveContext.Current.EditorState.SnapToVertexSelected
             && shapeToSnap.ShapeType() == TopAbs_ShapeEnum.VERTEX)
         {
             // On Vertex
-            var vertex = shapeToSnap.ToVertex();
-            return (SnapModes.Vertex, BRep_Tool.Pnt(vertex), null);
+            var point = BRep_Tool.Pnt(shapeToSnap.ToVertex());
+            _AddAuxElements(point);
+            return (SnapModes.Vertex, point, null);
         }
 
         if (SupportedModes.HasFlag(SnapModes.Edge)
@@ -115,44 +145,53 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
             if (curve != null)
             {
-                var ray = new Geom_Line(viewportController.ScreenToViewAxis(Convert.ToInt32(screenPoint.X), Convert.ToInt32(screenPoint.Y)));
-                var extrema = new GeomAPI_ExtremaCurveCurve(curve, ray);
-                if (extrema.NbExtrema() >= 1)
+                _AddAuxElements(edge, curve, umin, umax);
+                if(viewportController.ScreenToPointOnCurve(Convert.ToInt32(screenPoint.X), Convert.ToInt32(screenPoint.Y), curve, out Pnt edgePnt))
                 {
-                    Pnt p1 = new Pnt();
-                    Pnt p2 = new Pnt();
-                    if (extrema.TotalNearestPoints(ref p1, ref p2))
-                    {
-                        return (SnapModes.Edge, p1, curve);
-                    }
+                    return (SnapModes.Edge, edgePnt, curve);
                 }
             }
         }
+
+        CleanupAux();
 
         return (SnapModes.None, Pnt.Origin, null);
     }
 
     //--------------------------------------------------------------------------------------------------
-    
-    protected (SnapModes mode, Pnt point) Snap(Point screenPoint, AIS_InteractiveObject aisObjectToSnap)
+
+    protected (SnapModes Mode, Pnt Point) Snap(ViewportController viewportController, Point screenPoint, AIS_InteractiveObject aisObjectToSnap)
     {
-        if (aisObjectToSnap == null) 
+        if (aisObjectToSnap == null)
+        {
+            CleanupAux();
             return (SnapModes.None, Pnt.Origin);
+        }
+
+        if (SupportedModes.HasFlag(SnapModes.Auxiliary)
+            && InteractiveContext.Current.EditorState.SnapToAuxSelected
+            && (AuxiliaryContext?.TryGetSnapPoint(viewportController, screenPoint, aisObjectToSnap, out Pnt auxPnt) ?? false))
+        {
+            // On Auxiliary Element
+            return (SnapModes.Auxiliary, auxPnt);
+        }
 
         if (SupportedModes.HasFlag(SnapModes.Vertex) 
             && InteractiveContext.Current.EditorState.SnapToVertexSelected 
             && aisObjectToSnap is AIS_Point aisPoint)
         {
             // On Vertex
+            CleanupAux();
             return (SnapModes.Vertex, aisPoint.Component().Pnt());
         }
 
+        CleanupAux();
         return (SnapModes.None, Pnt.Origin);
     }
 
     //--------------------------------------------------------------------------------------------------
     
-    protected (SnapModes mode, Pnt point, Geom_Curve curve) Snap(ViewportController viewportController, Point screenPoint, TopoDS_Shape shapeToSnap, AIS_InteractiveObject aisObjectToSnap)
+    protected (SnapModes Mode, Pnt Point, Geom_Curve Curve) Snap(ViewportController viewportController, Point screenPoint, TopoDS_Shape shapeToSnap, AIS_InteractiveObject aisObjectToSnap)
     {
         SnapModes mode = SnapModes.None;
         Pnt point = Pnt.Origin;
@@ -161,13 +200,13 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
         // Try BRepShape first
         if (shapeToSnap != null)
         {
-            (mode, point, curve) = Snap(viewportController,screenPoint, shapeToSnap);
+            (mode, point, curve) = Snap(viewportController, screenPoint, shapeToSnap);
         }
 
         // If none found, try AIS object next
         if (mode == SnapModes.None && aisObjectToSnap != null)
         {
-            (mode, point) = Snap(screenPoint, aisObjectToSnap);
+            (mode, point) = Snap(viewportController,screenPoint, aisObjectToSnap);
         }
 
         return (mode, point, curve);
@@ -222,6 +261,98 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
         Pnt2d gridUv = WorkspaceController.ComputeGridPoint(uv);
         pnt = plane.Value(gridUv);
         return true;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    #endregion
+
+    #region Auxiliary Snap
+
+    Dictionary<SnapAuxiliaryCategories, List<SnapAuxiliaryFunction>> _InstanceAuxiliaryFunctions;
+
+    public void AddSnapAuxiliaryFunction(SnapAuxiliaryCategories category, SnapAuxiliaryFunction function)
+    {
+        _InstanceAuxiliaryFunctions ??= new();
+        if (!_InstanceAuxiliaryFunctions.ContainsKey(category))
+        {
+            _InstanceAuxiliaryFunctions[category] = new();
+        }
+        _InstanceAuxiliaryFunctions[category].Add(function);
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    bool _IsAuxEnabled()
+    {
+        if (!SupportedModes.HasFlag(SnapModes.Auxiliary)
+            || !InteractiveContext.Current.EditorState.SnapToAuxSelected)
+        {
+            CleanupAux();
+            return false;
+        }
+        return true;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _AddAuxElements(Pnt point)
+    {
+        if (!_IsAuxEnabled())
+            return;
+
+        // No auxiliary points for vertices available
+        return;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _AddAuxElements(TopoDS_Edge edge, Geom_Curve curve, double umin, double umax)
+    {
+        if (!_IsAuxEnabled())
+            return;
+
+        if (AuxiliaryContext?.Edge.Equals(edge) == true)
+            return;
+
+        var prevContext = AuxiliaryContext;
+        AuxiliaryContext?.Dispose();
+        AuxiliaryContext = new(this, edge, curve, umin, umax)
+        {
+            PreviousCurve = prevContext?.Curve,
+            PreviousUMin = prevContext?.UMin ?? 0,
+            PreviousUMax = prevContext?.UMax ?? umax,
+            ShowVisualsTopmost = ShowVisualsTopmost
+        };
+
+        foreach (var (category, funcs) in AuxiliaryFunctions)
+        {
+            if (category != SnapAuxiliaryCategories.None
+                && !InteractiveContext.Current.EditorState.SnapToAuxCategories.HasFlag(category))
+                continue;
+
+            funcs.ForEach(func => func(AuxiliaryContext));
+        }
+
+        if (_InstanceAuxiliaryFunctions != null)
+        {
+            foreach (var (category, funcs) in _InstanceAuxiliaryFunctions)
+            {
+                if (category != SnapAuxiliaryCategories.None
+                    && !InteractiveContext.Current.EditorState.SnapToAuxCategories.HasFlag(category))
+                    continue;
+
+                funcs.ForEach(func => func(AuxiliaryContext));
+            }
+        }
+    }
+    
+    //--------------------------------------------------------------------------------------------------
+
+    protected void CleanupAux()
+    {
+        AuxiliaryContext?.Dispose();
+        AuxiliaryContext = null;
     }
 
     //--------------------------------------------------------------------------------------------------

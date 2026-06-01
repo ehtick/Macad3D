@@ -32,7 +32,7 @@
                     <ToggleButton mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToGrid}" />
                     <ToggleButton mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToVertex}" />
                     <ToggleButton mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToEdge}" />
-
+                    <ToggleButton mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAux}" />
                     <Separator />
 
                     <!-- Copy -->

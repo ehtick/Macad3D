@@ -1,16 +1,18 @@
-﻿using System;
-using Macad.Core;
+﻿using Macad.Core;
+using System;
+using System.Collections.Generic;
 
 namespace Macad.Interaction;
 
 [Flags]
 public enum SnapModes
 {
-    None = 0,
-    Grid = 1 << 0,
-    Vertex = 1 << 1,
-    Edge = 1 << 2,
-    Face = 1 << 3
+    None      = 0,
+    Grid      = 1 << 0,
+    Vertex    = 1 << 1,
+    Edge      = 1 << 2,
+    Face      = 1 << 3,
+    Auxiliary = 1 << 7
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -43,6 +45,26 @@ public interface ISnapHandler
     {
         SnapInfoChanged?.Invoke(instance.CurrentInfo);
     }
+
+    //--------------------------------------------------------------------------------------------------
+
+    public delegate void SnapAuxiliaryFunction(SnapAuxiliaryContext context);
+    protected static readonly Dictionary<SnapAuxiliaryCategories, List<SnapAuxiliaryFunction>> AuxiliaryFunctions = [];
+
+    public static void RegisterSnapAuxiliaryFunction(SnapAuxiliaryCategories category, SnapAuxiliaryFunction function)
+    {
+        if (!AuxiliaryFunctions.ContainsKey(category))
+        {
+            AuxiliaryFunctions[category] = new();
+        }
+        AuxiliaryFunctions[category].Add(function);
+    }
+
+    public void AddSnapAuxiliaryFunction(SnapAuxiliaryCategories category, SnapAuxiliaryFunction function)
+    {}
+
+    //--------------------------------------------------------------------------------------------------
+
 }
 
 //--------------------------------------------------------------------------------------------------

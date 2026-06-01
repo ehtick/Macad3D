@@ -29,7 +29,7 @@ public class ContextMenuAdaptor : WindowAdaptor
                             ?? Window.FindFirstDescendant(cf => cf.ByControlType(ControlType.MenuItem).And(cf.ByName(name))))
             ?.AsMenuItem();
         Assert.IsNotNull(menuItemCtrl, $"MenuItem {name} not found in current context menu.");
-        menuItemCtrl.Click(!jump);
+        menuItemCtrl.Invoke();
         Wait.UntilInputIsProcessed();
         Wait.UntilResponsive(Window);
     }

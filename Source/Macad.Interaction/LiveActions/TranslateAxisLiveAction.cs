@@ -244,7 +244,7 @@ public sealed class TranslateAxisLiveAction : LiveAction
                 if (_TargetEntity != null)
                 {
                     _SnapHandler = SetSnapHandler(new Snap3D());
-                    _SnapHandler.SupportedModes = SnapModes.Vertex | SnapModes.Edge | SnapModes.Face;
+                    _SnapHandler.SupportedModes = SnapModes.Vertex | SnapModes.Edge | SnapModes.Face | SnapModes.Auxiliary;
                 }
 
                 SetCursor(Cursor);

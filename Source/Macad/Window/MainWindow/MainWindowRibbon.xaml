@@ -214,9 +214,58 @@
                                      AutomationProperties.AutomationId="SnapToEdge" 
                                      SizeDefinition="Large,Middle,Small" />
 
-                <!--<fluent:Spinner Header="Tolerance" 
-                                    Minimum="1" Maximum="9.5" Format="0.0" Increment="0.5"
-                                    Value="{Binding Context.EditorState.SnappingPixelTolerance}"/>-->
+                <Fluent:SplitButton mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAux}"
+                                     AutomationProperties.AutomationId="SnapToAux" 
+                                     SizeDefinition="Large,Middle,Small">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <MenuItem CommandParameter="Midpoint"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-Midpoint"/>
+                            <MenuItem CommandParameter="TrisectionPoint"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-TrisectionPoint"/>
+                            <MenuItem CommandParameter="CenterPoint"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-CenterPoint"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <MenuItem CommandParameter="QuadrantPoint"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-QuadrantPoint"/>
+                            <MenuItem CommandParameter="WorkplaneIntersection"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-WorkplaneIntersection"/>
+                            <MenuItem CommandParameter="Extension"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-Extension"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <MenuItem CommandParameter="IntersectionPoint"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-IntersectionPoint"/>
+                            <MenuItem CommandParameter="TangentPoint"
+                                             mmp:Command.Action="{x:Static mmi:WorkspaceCommands.ToggleSnapToAuxCategory}"
+                                             Style="{mmp:AppResource Macad.Styles.MenuItem.LargeIcon}"
+                                             StaysOpenOnClick="True"
+                                             AutomationProperties.AutomationId="SnapToAux-TangentPoint"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Fluent:SplitButton>
             </Fluent:RibbonGroupBox>
 
             <Fluent:RibbonGroupBox Header="Working Plane"

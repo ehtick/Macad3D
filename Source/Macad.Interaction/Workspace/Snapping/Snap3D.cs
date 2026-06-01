@@ -22,7 +22,7 @@ public sealed class Snap3D : SnapBase
 {
     public Snap3D()
     {
-        SupportedModes = SnapModes.Grid | SnapModes.Edge | SnapModes.Vertex;
+        SupportedModes = SnapModes.Grid | SnapModes.Edge | SnapModes.Vertex | SnapModes.Auxiliary;
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ public sealed class Snap3D : SnapBase
         {
             snapInfo = new SnapInfo3D(mode, point, curve)
             {
-                TargetName = mouseEvent.DetectedEntity?.Name
+                TargetName = AuxiliaryContext?.TryGetAuxTargetName(mouseEvent.DetectedAisObject) ?? mouseEvent.DetectedEntity?.Name
             };
         }
         else

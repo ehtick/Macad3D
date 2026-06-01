@@ -137,6 +137,12 @@ public class FormAdaptor
         var button = _FormControl.FindFirstDescendant(cf => cf.ByAutomationId(id));
         Assert.IsNotNull(button, $"Control {id} not found in form.");
 
+        if (button.ControlType == ControlType.SplitButton)
+        {
+            button = button.FindFirstDescendant(cf => cf.ByAutomationId("PART_Button"))?.AsButton();
+            Assert.IsNotNull(button, $"Button {id} is a SplitButton, but the ToggleButton part was not found.");
+        }
+
         return button.IsEnabled;
     }
 

@@ -314,7 +314,6 @@ public class MoveSketchPointAction : ToolAction
                                                       .ForEach(element => element.Activate(false));
             
             _SnapHandler = SetSnapHandler(new Snap2D());
-            _SnapHandler.SupportedModes = SnapModes.Grid | SnapModes.Edge | SnapModes.Vertex;
             _SnapHandler.Plane = _SketchEditorTool.Sketch.Plane;
 
             return true; // Suppress Rubberband Selection

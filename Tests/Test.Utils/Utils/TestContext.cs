@@ -100,6 +100,13 @@ public sealed class Context : InteractiveContext
         Current.Workspace.GridStep = 10;
         Current.WorkspaceController.V3dViewer.DisplayPrivilegedPlane(false);
 
+        Current.EditorState.SnappingEnabled = false;
+        Current.EditorState.SnapToGridSelected = false;
+        Current.EditorState.SnapToEdgeSelected = false;
+        Current.EditorState.SnapToVertexSelected = false;
+        Current.EditorState.SnapToAuxSelected = false;
+        Current.EditorState.SnapToAuxCategories = SnapAuxiliaryCategories.None;
+
         return Current;
     }
 

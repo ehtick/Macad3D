@@ -78,10 +78,10 @@ namespace Macad
 
 			bool Equals( System::Object^ obj ) override
 	        {
-		        if(this->GetType()->IsInstanceOfType( obj ))
-		        {
-			        return _NativeInstance == ((BaseClass^)obj)->_NativeInstance;
-		        }
+				if (obj->GetType()->IsAssignableTo(BaseClass::typeid))
+				{
+					return _NativeInstance == ((BaseClass^)obj)->_NativeInstance;
+				}
 		        return false;
 	        }
 

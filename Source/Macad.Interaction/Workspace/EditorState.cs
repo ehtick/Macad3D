@@ -202,7 +202,7 @@ public sealed class EditorState : BaseObject, IDisposable
                 RaisePropertyChanged();
             }
         }
-    }
+    } = true;
 
     //--------------------------------------------------------------------------------------------------
 
@@ -219,7 +219,7 @@ public sealed class EditorState : BaseObject, IDisposable
                 _WorkspaceController?.Selection?.Invalidate();
             }
         }
-    }
+    } = true;
 
     //--------------------------------------------------------------------------------------------------
 
@@ -236,7 +236,41 @@ public sealed class EditorState : BaseObject, IDisposable
                 _WorkspaceController?.Selection?.Invalidate();
             }
         }
-    }
+    } = true;
+
+    //--------------------------------------------------------------------------------------------------
+
+    [SerializeMember]
+    public bool SnapToAuxSelected
+    {
+        get;
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                RaisePropertyChanged();
+                _WorkspaceController?.Selection?.Invalidate();
+            }
+        }
+    } = true;
+
+    //--------------------------------------------------------------------------------------------------
+
+    [SerializeMember]
+    public SnapAuxiliaryCategories SnapToAuxCategories
+    {
+        get;
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                RaisePropertyChanged();
+                _WorkspaceController?.Selection?.Invalidate();
+            }
+        }
+    } = SnapAuxiliaryCategories.All;
 
     //--------------------------------------------------------------------------------------------------
 
@@ -253,7 +287,7 @@ public sealed class EditorState : BaseObject, IDisposable
                 _WorkspaceController?.Selection?.Invalidate();
             }
         }
-    }
+    } = true;
 
     //--------------------------------------------------------------------------------------------------
 

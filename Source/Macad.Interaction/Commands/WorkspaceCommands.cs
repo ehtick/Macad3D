@@ -216,7 +216,7 @@ public static class WorkspaceCommands
         Header = () => "Enable Snapping",
         Description = () => "Toggle the snapping of positions to selected elements.",
         Icon = () => "Snap-Enabled",
-        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(EditorState)}.{nameof(EditorState.SnappingEnabled)}", BindingMode.OneWay),
+        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(InteractiveContext.EditorState)}.{nameof(EditorState.SnappingEnabled)}", BindingMode.OneWay),
     };
 
     //--------------------------------------------------------------------------------------------------
@@ -232,11 +232,11 @@ public static class WorkspaceCommands
         },
         () => CanExecuteOnWorkspace() && (InteractiveContext.Current?.EditorState?.SnappingEnabled ?? false))
     {
-        Header = () => "Grid",
+        Header = () => "Snap Grid",
         Title = () => "Snap to Grid",
         Description = () => "Toggle the snapping of positions to the grid.",
         Icon = () => "Snap-Grid",
-        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(EditorState)}.{nameof(EditorState.SnapToGridSelected)}", BindingMode.OneWay),
+        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(InteractiveContext.EditorState)}.{nameof(EditorState.SnapToGridSelected)}", BindingMode.OneWay),
     };
 
     //--------------------------------------------------------------------------------------------------
@@ -252,11 +252,11 @@ public static class WorkspaceCommands
         },
         () => CanExecuteOnWorkspace() && (InteractiveContext.Current?.EditorState?.SnappingEnabled ?? false))
     {
-        Header = () => "Vertex",
+        Header = () => "Snap Vertex",
         Title = () => "Snap to Vertex",
         Description = () => "Toggle the snapping of positions to other vertices.",
         Icon = () => "Snap-Vertex",
-        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(EditorState)}.{nameof(EditorState.SnapToVertexSelected)}", BindingMode.OneWay),
+        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(InteractiveContext.EditorState)}.{nameof(EditorState.SnapToVertexSelected)}", BindingMode.OneWay),
     };
 
     //--------------------------------------------------------------------------------------------------
@@ -272,11 +272,85 @@ public static class WorkspaceCommands
         },
         () => CanExecuteOnWorkspace() && (InteractiveContext.Current?.EditorState?.SnappingEnabled ?? false))
     {
-        Header = () => "Edge",
+        Header = () => "Snap Edge",
         Title = () => "Snap to Edge",
         Description = () => "Toggle the snapping of positions to other edges.",
         Icon = () => "Snap-Edge",
-        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(EditorState)}.{nameof(EditorState.SnapToEdgeSelected)}", BindingMode.OneWay),
+        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(InteractiveContext.EditorState)}.{nameof(EditorState.SnapToEdgeSelected)}", BindingMode.OneWay),
+    };
+
+    //--------------------------------------------------------------------------------------------------
+
+    public static ActionCommand ToggleSnapToAux { get; } = new(
+        () =>
+        {
+            var editorState = InteractiveContext.Current?.EditorState;
+            if (editorState != null)
+            {
+                editorState.SnapToAuxSelected = !editorState.SnapToAuxSelected;
+            }
+        },
+        () => CanExecuteOnWorkspace() && (InteractiveContext.Current?.EditorState?.SnappingEnabled ?? false))
+    {
+        Header = () => "Snap Aux",
+        Title = () => "Snap to Auxiliary",
+        Description = () => "Toggle the snapping of positions to auxiliary points and axes.",
+        Icon = () => "Snap-Aux",
+        IsCheckedBinding = BindingHelper.Create(InteractiveContext.Current, $"{nameof(InteractiveContext.EditorState)}.{nameof(EditorState.SnapToAuxSelected)}", BindingMode.OneWay),
+    };
+
+    //--------------------------------------------------------------------------------------------------
+    
+    public static ActionCommand<SnapAuxiliaryCategories> ToggleSnapToAuxCategory { get; } = new(
+        (categories) =>
+        {
+            var editorState = InteractiveContext.Current?.EditorState;
+            editorState?.SnapToAuxCategories = editorState.SnapToAuxCategories.Toggled(categories);
+        },
+        () => CanExecuteOnWorkspace() && (InteractiveContext.Current?.EditorState?.SnappingEnabled ?? false))
+    {
+        Header = categories => categories switch
+        {
+            SnapAuxiliaryCategories.Midpoint => "Middle Point",
+            SnapAuxiliaryCategories.TrisectionPoint => "Trisection Points",
+            SnapAuxiliaryCategories.CenterPoint => "Center Point",
+            SnapAuxiliaryCategories.QuadrantPoint => "Quadrant Points",
+            SnapAuxiliaryCategories.WorkplaneIntersection => "Workplane Intersections",
+            SnapAuxiliaryCategories.Extension => "Tangent Extension",
+            SnapAuxiliaryCategories.IntersectionPoint => "Intersection Point",
+            SnapAuxiliaryCategories.TangentPoint => "Tangent Point",
+            _ => "Snap Aux Category"
+        },
+        Description = categories => categories switch
+        {
+            SnapAuxiliaryCategories.Midpoint => "Snaps to the middle point of a curve or the geometric or mass center of a face.",
+            SnapAuxiliaryCategories.TrisectionPoint => "Divides a curve into three equal parts and snaps to the division points.",
+            SnapAuxiliaryCategories.CenterPoint => "Snaps to the center point of a conic curve.",
+            SnapAuxiliaryCategories.QuadrantPoint => "Snaps to the quadrant points of a conic curve.",
+            SnapAuxiliaryCategories.WorkplaneIntersection => "Snaps to the intersection points of the selected edge with the working plane.",
+            SnapAuxiliaryCategories.Extension => "Snaps to the tangent extension of the curve endpoints.",
+            SnapAuxiliaryCategories.IntersectionPoint => "Snaps to the intersection point between two edges. Hover over both edges sequentially.",
+            SnapAuxiliaryCategories.TangentPoint => "Snaps to a point on the curve where the linear is tangent to the curve.",
+            _ => "Snaps to auxiliary points and axes."
+        },
+        Icon = categories => categories switch
+        {
+            SnapAuxiliaryCategories.Midpoint => "Snap-Aux-Midpoint",
+            SnapAuxiliaryCategories.TrisectionPoint => "Snap-Aux-DividePoint",
+            SnapAuxiliaryCategories.CenterPoint => "Snap-Aux-Center",
+            SnapAuxiliaryCategories.QuadrantPoint => "Snap-Aux-Quadrant",
+            SnapAuxiliaryCategories.WorkplaneIntersection => "Snap-Aux-WpIntersection",
+            SnapAuxiliaryCategories.Extension => "Snap-Aux-Extension",
+            SnapAuxiliaryCategories.IntersectionPoint => "Snap-Aux-Intersection",
+            SnapAuxiliaryCategories.TangentPoint => "Snap-Aux-Tangent",
+            _ => "Snap-Aux"
+        },
+        IsCheckedBinding = categories => 
+            BindingHelper.Create(InteractiveContext.Current, 
+            $"{nameof(InteractiveContext.EditorState)}.{nameof(EditorState.SnapToAuxCategories)}",
+            BindingMode.OneWay,
+            HasFlagToBoolConverter.Instance,
+            categories.ToString())
     };
 
     //--------------------------------------------------------------------------------------------------

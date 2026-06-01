@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Macad.Common;
+using Macad.Core.Geom;
 using Macad.Core.Shapes;
 using Macad.Occt;
 using Macad.Presentation;
@@ -110,6 +112,7 @@ public sealed class SketchSegmentLineCreator : SketchSegmentCreator
 
             SetHintMessage("__Select end point__ for line.");
             _PointAction.Reset();
+            _PointAction.GetSnapHandler().AddSnapAuxiliaryFunction(SnapAuxiliaryCategories.TangentPoint, _SnapAuxFunction_Tangent);
         } 
         else
         {
@@ -124,6 +127,27 @@ public sealed class SketchSegmentLineCreator : SketchSegmentCreator
 
             // Accept point
             SketchEditorTool.FinishSegmentCreation(_Points, _MergePointIndices, [_Segment], null, _MergePointIndices[1] >= 0 ? -1 : 1);
+        }
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _SnapAuxFunction_Tangent(SnapAuxiliaryContext context)
+    {
+        Geom2d_Curve curve2d = GeomProjLib.Curve2d(context.Curve, context.UMin, context.UMax, new Geom_Plane(Sketch.Plane));
+        var tangentParams = Geom2dUtils.FindAllTangentsThroughPoint(curve2d, _Points[0], context.UMin, context.UMax);
+        if (tangentParams.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var tangentParam in tangentParams)
+        {
+            Pnt2d pnt2d = curve2d.Value(tangentParam);
+            Pnt pnt = ElSLib.PlaneValue(pnt2d.X, pnt2d.Y, Sketch.Plane.Position);
+            SnapAuxiliaryFunctions.AddAuxMarker(context, "Tangent", pnt);
+            Pnt sourcePnt = ElSLib.PlaneValue(_Points[0].X, _Points[0].Y, Sketch.Plane.Position);
+            SnapAuxiliaryFunctions.AddHintLine(context, sourcePnt, pnt);
         }
     }
 
