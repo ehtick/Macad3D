@@ -28,7 +28,7 @@ public enum SnapAuxiliaryCategories
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-public sealed class SnapAuxiliaryContext(SnapBase snapHandler, TopoDS_Edge edge,Geom_Curve curve, double uMin, double uMax) : IDisposable
+public sealed class SnapAuxiliaryContext(SnapBase snapHandler, TopoDS_Edge edge, Geom_Curve curve, double uMin, double uMax) : IDisposable
 {
     internal record AuxElement(string Name, Ax1 Position);
 
@@ -176,6 +176,8 @@ public static class SnapAuxiliaryFunctions
         double umin = context.UMin;
         double umax = context.UMax;
 
+        if(curve == null)
+            return;
         if (umin.Equals(umax))
             return;
         if (curve.IsPeriodic() && umin.Distance(umax).Equals(curve.Period()))
@@ -195,6 +197,8 @@ public static class SnapAuxiliaryFunctions
         double umin = context.UMin;
         double umax = context.UMax;
 
+        if (curve == null)
+            return;
         if (umin.Equals(umax))
             return;
         if (curve.IsClosed() && umin.Distance(umax).Equals(curve.Period()))
@@ -241,6 +245,9 @@ public static class SnapAuxiliaryFunctions
     [SnapAuxiliaryFunction(SnapAuxiliaryCategories.WorkplaneIntersection)]
     static void _Aux_WorkplaneIntersection(SnapAuxiliaryContext context)
     {
+        if (context.Curve == null)
+            return;
+
         GeomAPI_IntCS intCS = new(context.Curve, new Geom_Plane(InteractiveContext.Current.Workspace.WorkingPlane));
         if (!intCS.IsDone() || intCS.NbPoints() <= 0)
             return;
@@ -260,11 +267,12 @@ public static class SnapAuxiliaryFunctions
         double umin = context.UMin;
         double umax = context.UMax;
 
+        if (curve == null)
+            return;
         if (umin.Equals(umax))
             return;
         if (curve.IsClosed() && umin.Distance(umax).Equals(curve.Period()))
             return;
-
 
         Pnt p1 = new Pnt();
         Vec v1 = new Vec();
@@ -282,9 +290,9 @@ public static class SnapAuxiliaryFunctions
     //--------------------------------------------------------------------------------------------------
 
     [SnapAuxiliaryFunction(SnapAuxiliaryCategories.IntersectionPoint)]
-    static void _Aux_MiterPoint(SnapAuxiliaryContext context)
+    static void _Aux_IntersectionPoint(SnapAuxiliaryContext context)
     {
-        if (context.PreviousCurve == null)
+        if (context.Curve == null || context.PreviousCurve == null)
             return;
 
         Geom_Curve curve = context.Curve;

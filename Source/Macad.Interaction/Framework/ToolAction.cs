@@ -39,6 +39,7 @@ public abstract class ToolAction : WorkspaceControl
     public virtual void Reset()
     {
         IsFinished = false;
+        GetSnapHandler().Reset();
     }
 
     //--------------------------------------------------------------------------------------------------

@@ -453,6 +453,37 @@ public class CreateSegmentTests
     //--------------------------------------------------------------------------------------------------
 
     [Test]
+    public void CreateArcCenter_Snapping()
+    {
+        var ctx = Context.Current;
+        ctx.EditorState.SnappingEnabled = true;
+        ctx.EditorState.SnapToAuxSelected = true;
+        ctx.EditorState.SnapToAuxCategories = SnapAuxiliaryCategories.All;
+
+        ctx.WorkspaceController.StartTool(new CreateSketchTool(CreateSketchTool.CreateMode.WorkplaneXY));
+        var sketchEditTool = ctx.WorkspaceController.CurrentTool as SketchEditorTool;
+        Assert.That(sketchEditTool, Is.Not.Null);
+
+        Assert.Multiple(() =>
+        {
+            sketchEditTool.StartSegmentCreation<SketchSegmentArcCenterCreator>();
+            ctx.ClickAt(250, 250); // Center point
+            ctx.ClickAt(100, 250); // Edge point 1
+            ctx.MoveTo(400, 247);
+            AssertHelper.IsSameViewport(Path.Combine(_BasePath, "CreateArcCenterSnapping01"), 0.1);
+            ctx.ClickAt(100, 250); // Edge point 2
+            Assert.AreEqual(3, sketchEditTool.Sketch.Points.Count);
+            Assert.AreEqual(1, sketchEditTool.Sketch.Segments.Count);
+            Assert.AreEqual(0, sketchEditTool.Sketch.Constraints.Count);
+
+            //Cleanup
+            sketchEditTool.Stop();
+        });
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    [Test]
     public void CreateEllipseCenter()
     {
         var ctx = Context.Current;
@@ -546,7 +577,7 @@ public class CreateSegmentTests
             sketchEditTool.Stop();
         });
     }
-
+    
     //--------------------------------------------------------------------------------------------------
 
     [Test]

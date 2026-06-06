@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using Macad.Common;
-using Macad.Interaction.Visual;
+﻿using Macad.Common;
 using Macad.Core;
+using Macad.Interaction.Visual;
 using Macad.Occt;
 
 namespace Macad.Interaction.Editors.Shapes;
@@ -24,7 +23,7 @@ public class RecenterGridSketchTool : SketchTool
         }
 
         _PointAction.EnablePointMerge = false;
-        _PointAction.AdditionalSnapPoints = new List<Pnt2d> {Pnt2d.Origin};
+        _PointAction.GetSnapHandler().AddSnapAuxiliaryFunction(SnapAuxiliaryCategories.None, _SnapAuxFunction_Origin);
         _PointAction.Preview += _PointAction_Preview;
         _PointAction.Finished += _PointAction_Finished;
 
@@ -44,6 +43,14 @@ public class RecenterGridSketchTool : SketchTool
         Add(_OriginMarker);
 
         return true;
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _SnapAuxFunction_Origin(SnapAuxiliaryContext context)
+    {
+        Pnt pnt = ElSLib.PlaneValue(0, 0, Sketch.Plane.Position);
+        SnapAuxiliaryFunctions.AddAuxMarker(context, "Origin", pnt);
     }
 
     //--------------------------------------------------------------------------------------------------

@@ -36,6 +36,9 @@ public interface ISnapHandler
 
     bool NeedActiveSubshapes(SubshapeType subshapeType);
 
+    // Resets any state, including registered auxiliary points
+    void Reset();
+
     //--------------------------------------------------------------------------------------------------
 
     public delegate void SnapInfoEventHandler(SnapInfo snapInfo);

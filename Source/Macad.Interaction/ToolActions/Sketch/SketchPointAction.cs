@@ -32,7 +32,6 @@ public class SketchPointAction : ToolAction
     Pnt2d _PointOnWorkingPlane;
     int _MergeCandidateIndex;
     public bool EnablePointMerge { get; set; }
-    public IEnumerable<Pnt2d> AdditionalSnapPoints { get; set; }
 
     //--------------------------------------------------------------------------------------------------
 
@@ -192,7 +191,7 @@ public class SketchPointAction : ToolAction
         double mergeDistance = _SnapHandler.GetSnapOnPlaneDistanceThreshold(data.ViewportController);
 
         // Snap
-        var snapInfo = _SnapHandler.Snap(data, AdditionalSnapPoints);
+        var snapInfo = _SnapHandler.Snap(data);
         if (snapInfo.Mode != SnapModes.None)
         {
             point = snapInfo.Point;

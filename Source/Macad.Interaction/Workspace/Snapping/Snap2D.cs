@@ -54,21 +54,21 @@ public sealed class Snap2D : SnapBase
 
     //--------------------------------------------------------------------------------------------------
     
-    public SnapInfo2D Snap(ViewportController viewportController, Pnt2d point, IEnumerable<Pnt2d> additionalPoints = null)
+    public SnapInfo2D Snap(ViewportController viewportController, Pnt2d point)
     {
         if (!InteractiveContext.Current.EditorState.SnappingEnabled)
         {
             return SnapInfo2D.Empty;
         }
 
-        SnapInfo2D snapInfo = _Snap(viewportController, point, additionalPoints);
+        SnapInfo2D snapInfo = _Snap(viewportController, point);
         CurrentInfo = snapInfo;
         return snapInfo;
     }
 
     //--------------------------------------------------------------------------------------------------
 
-    public SnapInfo2D Snap(ViewportController viewportController, IList<Pnt2d> points, out int pointSnapped, IEnumerable<Pnt2d> additionalPoints = null)
+    public SnapInfo2D Snap(ViewportController viewportController, IList<Pnt2d> points, out int pointSnapped)
     {
         if (!InteractiveContext.Current.EditorState.SnappingEnabled)
         {
@@ -84,7 +84,7 @@ public sealed class Snap2D : SnapBase
         {
             var point = points[index];
             // Calc snapping position and distance to grid
-            var snapInfo = _Snap(viewportController, point, additionalPoints);
+            var snapInfo = _Snap(viewportController, point);
             if (snapInfo.Mode != SnapModes.None && snapInfo.Distance < snapDistance)
             {
                 // This point snaps closer
@@ -101,7 +101,7 @@ public sealed class Snap2D : SnapBase
 
     //--------------------------------------------------------------------------------------------------
 
-    public SnapInfo2D Snap(MouseEventData mouseEvent, IEnumerable<Pnt2d> additionalPoints = null)
+    public SnapInfo2D Snap(MouseEventData mouseEvent)
     {
         if (!InteractiveContext.Current.EditorState.SnappingEnabled)
         {
@@ -118,9 +118,8 @@ public sealed class Snap2D : SnapBase
                                                  mouseEvent.DetectedBrepShape,
                                                  mouseEvent.DetectedAisObject,
                                                  mouseEvent.DetectedEntity?.Name);
-            var snapInfoAdditional = _SnapAdditionalPoints(point, additionalPoints);
             var snapInfoGrid = _SnapGrid(mouseEvent.ViewportController, mouseEvent.ScreenPoint, point);
-            snapInfo = snapInfoAdditional ^ snapInfoDetected ^ snapInfoGrid;
+            snapInfo = snapInfoDetected ^ snapInfoGrid;
             if (snapInfo.Distance > GetSnapOnPlaneDistanceThreshold(mouseEvent.ViewportController))
             {
                 snapInfo = SnapInfo2D.Empty;
@@ -133,7 +132,7 @@ public sealed class Snap2D : SnapBase
 
     //--------------------------------------------------------------------------------------------------
 
-    SnapInfo2D _Snap(ViewportController viewportController, Pnt2d point, IEnumerable<Pnt2d> additionalPoints = null)
+    SnapInfo2D _Snap(ViewportController viewportController, Pnt2d point)
     {
         if (!InteractiveContext.Current.EditorState.SnappingEnabled)
         {
@@ -158,9 +157,8 @@ public sealed class Snap2D : SnapBase
 
             SnapInfo2D snapInfoDetected = _SnapDetected(viewportController, screenPoint, point, pickedShape, pickedAisObject, targetName);
 
-            var snapInfoAdditional = _SnapAdditionalPoints(point, additionalPoints);
             var snapInfoGrid = _SnapGrid(viewportController,screenPoint, point);
-            snapInfo = snapInfoAdditional ^ snapInfoDetected ^ snapInfoGrid;
+            snapInfo = snapInfoDetected ^ snapInfoGrid;
 
             if (snapInfo.Distance > GetSnapOnPlaneDistanceThreshold(viewportController))
             {
@@ -187,35 +185,6 @@ public sealed class Snap2D : SnapBase
         {
             TargetName = AuxiliaryContext?.TryGetAuxTargetName(aisObject) ?? targetName
         };
-    }
-
-    //--------------------------------------------------------------------------------------------------
-
-    SnapInfo2D _SnapAdditionalPoints(Pnt2d point, IEnumerable<Pnt2d> additionalPoints = null)
-    {
-        if (!InteractiveContext.Current.EditorState.SnappingEnabled)
-        {
-            return SnapInfo2D.Empty;
-        }
-        
-        SnapInfo2D snapInfo2D = SnapInfo2D.Empty;
-        double threshold = double.MaxValue;
-
-        // First check given extra points
-        if (additionalPoints != null)
-        {
-            foreach (var otherPnt in additionalPoints)
-            {
-                var distance = point.Distance(otherPnt);
-                if (distance < threshold)
-                {
-                    snapInfo2D = new(SnapModes.Vertex, otherPnt, distance);
-                    threshold = distance;
-                }
-            }
-        }
-
-        return snapInfo2D;
     }
 
     //--------------------------------------------------------------------------------------------------

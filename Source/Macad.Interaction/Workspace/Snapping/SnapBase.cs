@@ -4,8 +4,6 @@ using Macad.Occt;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using static Macad.Interaction.ISnapHandler;
 using Point = System.Windows.Point;
 
 namespace Macad.Interaction;
@@ -116,7 +114,6 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
     {
         if (shapeToSnap == null)
         {
-            CleanupAux();
             return (SnapModes.None, Pnt.Origin, null);
         }
 
@@ -154,6 +151,7 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
         }
 
         CleanupAux();
+        _AddStaticAuxElements();
 
         return (SnapModes.None, Pnt.Origin, null);
     }
@@ -209,6 +207,11 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
             (mode, point) = Snap(viewportController,screenPoint, aisObjectToSnap);
         }
 
+        if (AuxiliaryContext == null)
+        {
+            _AddStaticAuxElements();
+        }
+
         return (mode, point, curve);
     }
 
@@ -244,9 +247,10 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
     //--------------------------------------------------------------------------------------------------
     
-    public void Reset()
+    public virtual void Reset()
     {
         CurrentInfo = SnapInfo.Empty;
+        CleanupAux();
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -269,9 +273,9 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
     #region Auxiliary Snap
 
-    Dictionary<SnapAuxiliaryCategories, List<SnapAuxiliaryFunction>> _InstanceAuxiliaryFunctions;
+    Dictionary<SnapAuxiliaryCategories, List<ISnapHandler.SnapAuxiliaryFunction>> _InstanceAuxiliaryFunctions;
 
-    public void AddSnapAuxiliaryFunction(SnapAuxiliaryCategories category, SnapAuxiliaryFunction function)
+    public void AddSnapAuxiliaryFunction(SnapAuxiliaryCategories category, ISnapHandler.SnapAuxiliaryFunction function)
     {
         _InstanceAuxiliaryFunctions ??= new();
         if (!_InstanceAuxiliaryFunctions.ContainsKey(category))
@@ -296,11 +300,28 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
 
     //--------------------------------------------------------------------------------------------------
 
-    void _AddAuxElements(Pnt point)
+    void _AddStaticAuxElements()
     {
         if (!_IsAuxEnabled())
             return;
 
+        var prevContext = AuxiliaryContext;
+        AuxiliaryContext?.Dispose();
+        AuxiliaryContext = new(this, null, null, 0, 0)
+        {
+            PreviousCurve = prevContext?.Curve,
+            PreviousUMin = prevContext?.UMin ?? 0,
+            PreviousUMax = prevContext?.UMax ?? 0,
+            ShowVisualsTopmost = ShowVisualsTopmost
+        };
+
+        _CallAuxMethods();
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _AddAuxElements(Pnt point)
+    {
         // No auxiliary points for vertices available
         return;
     }
@@ -312,7 +333,7 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
         if (!_IsAuxEnabled())
             return;
 
-        if (AuxiliaryContext?.Edge.Equals(edge) == true)
+        if (AuxiliaryContext?.Edge?.Equals(edge) == true)
             return;
 
         var prevContext = AuxiliaryContext;
@@ -325,7 +346,14 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
             ShowVisualsTopmost = ShowVisualsTopmost
         };
 
-        foreach (var (category, funcs) in AuxiliaryFunctions)
+        _CallAuxMethods();
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _CallAuxMethods()
+    {
+        foreach (var (category, funcs) in ISnapHandler.AuxiliaryFunctions)
         {
             if (category != SnapAuxiliaryCategories.None
                 && !InteractiveContext.Current.EditorState.SnapToAuxCategories.HasFlag(category))
@@ -346,7 +374,7 @@ public abstract class SnapBase : BaseObject, ISnapHandler, IDisposable
             }
         }
     }
-    
+
     //--------------------------------------------------------------------------------------------------
 
     protected void CleanupAux()

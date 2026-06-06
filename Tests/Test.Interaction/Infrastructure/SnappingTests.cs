@@ -242,7 +242,7 @@ public class SnappingTests
         {
             // Select edge, all points visible
             ctx.MoveTo(251, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
             AssertHelper.IsSameViewport(Path.Combine(_BasePath, "SnapToAuxCleanup01"));
             
@@ -253,18 +253,18 @@ public class SnappingTests
             AssertHelper.IsSameViewport(Path.Combine(_BasePath, "SnapToAuxCleanup02"));
             ctx.EditorState.SnapToAuxSelected = true;
             ctx.MoveTo(251, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
 
             // Aux points still there if edge is no longer hilighted
             ctx.MoveTo(240, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
             AssertHelper.IsSameViewport(Path.Combine(_BasePath, "SnapToAuxCleanup06"));
 
             // Aux points change when another edge is hilighted
             ctx.MoveTo(190, 214);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
             AssertHelper.IsSameViewport(Path.Combine(_BasePath, "SnapToAuxCleanup05"));
 
@@ -279,22 +279,22 @@ public class SnappingTests
             // Aux points (and edge hilight) invisible when edge snapping is turned off
             ctx.EditorState.SnapToEdgeSelected = false;
             ctx.MoveTo(251, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.Edge, Is.Null);
             AssertHelper.IsSameViewport(Path.Combine(_BasePath, "SnapToAuxCleanup03"));
             ctx.EditorState.SnapToEdgeSelected = true;
             ctx.MoveTo(251, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
 
             // Aux points invisible when aux categories are turned off
             var savedCats = ctx.EditorState.SnapToAuxCategories;
             ctx.EditorState.SnapToAuxCategories = SnapAuxiliaryCategories.None;
             ctx.MoveTo(251, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(0));
             ctx.EditorState.SnapToAuxCategories = savedCats;
             ctx.MoveTo(251, 462);
-            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext, Is.Not.Null);
+            Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext?.Edge, Is.Not.Null);
             Assert.That(((SnapBase)ctx.WorkspaceController.CurrentTool.GetSnapHandler()).AuxiliaryContext.AuxVisuals.Count, Is.EqualTo(4));
 
             // All aux points should be cleared when tool is stopped

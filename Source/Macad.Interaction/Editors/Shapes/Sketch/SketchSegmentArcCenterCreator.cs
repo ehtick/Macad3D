@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using Macad.Interaction.Visual;
-using Macad.Common;
+﻿using Macad.Common;
 using Macad.Core.Shapes;
+using Macad.Interaction.Visual;
 using Macad.Occt;
 using Macad.Presentation;
+using System.Collections.Generic;
 
 namespace Macad.Interaction.Editors.Shapes;
 
@@ -297,9 +297,23 @@ public sealed class SketchSegmentArcCenterCreator : SketchSegmentCreator
 
         _PointAction.Reset();
         _PointAction.ConstraintPoint += _PointActionOnConstraintPoint;
+        _PointAction.GetSnapHandler().AddSnapAuxiliaryFunction(SnapAuxiliaryCategories.None, _SnapAuxFunction_Quadrant);
 
         WorkspaceController.Invalidate();
         WorkspaceController.UpdateSelection();
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    void _SnapAuxFunction_Quadrant(SnapAuxiliaryContext context)
+    {
+        Pnt center = ElSLib.PlaneValue(_CenterPoint.X, _CenterPoint.Y, Sketch.Plane.Position);
+        Pnt start = ElSLib.PlaneValue(_Points[0].X, _Points[0].Y, Sketch.Plane.Position);
+        Vec startVec = new(center, start);
+        var circle = new gp_Circ(new Ax2(center, Sketch.Plane.Axis.Direction, startVec.ToDir()), startVec.Magnitude());
+        SnapAuxiliaryFunctions.AddAuxMarker(context, "90°", ElCLib.Value(Maths.HalfPI, circle));
+        SnapAuxiliaryFunctions.AddAuxMarker(context, "180°", ElCLib.Value(Maths.PI, circle));
+        SnapAuxiliaryFunctions.AddAuxMarker(context, "270°", ElCLib.Value(Maths.PI + Maths.HalfPI, circle));
     }
 
     //--------------------------------------------------------------------------------------------------
