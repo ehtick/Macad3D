@@ -57,13 +57,11 @@ public partial class ViewportGridInfo : PanelBase
     public ViewportGridInfo()
     {
         InteractiveContext.Current.PropertyChanged += _Context_PropertyChanged;
-        _Context_PropertyChanged(InteractiveContext.Current, new(nameof(InteractiveContext.ViewportController)));
+        _Context_PropertyChanged(InteractiveContext.Current, new(nameof(InteractiveContext.WorkspaceController)));
 
         InteractiveContext.Current.ActiveViewportChanged += _Current_ActiveViewportChanged;
         _Current_ActiveViewportChanged(InteractiveContext.Current, new());
 
-
-        DataContext = this;
         InitializeComponent();
     }
 
@@ -83,6 +81,7 @@ public partial class ViewportGridInfo : PanelBase
             {
                 _WorkspaceController.PropertyChanged += _WorkspaceController_PropertyChanged;
                 _WorkspaceController.Workspace.PropertyChanged += _Workspace_PropertyChanged;
+                _UpdateValues();
             }
         }
     }
@@ -209,6 +208,7 @@ public partial class ViewportGridInfo : PanelBase
     protected override Size MeasureOverride(Size availableSize)
     {
         _AvailableWidth = availableSize.Width;
+        _UpdateValues();
         return base.MeasureOverride(availableSize);
     }
 

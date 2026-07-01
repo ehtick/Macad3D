@@ -9,11 +9,12 @@
              d:DesignHeight="450" d:DesignWidth="800"
              IsHitTestVisible="True"
              BorderThickness="0" 
-             Visibility="{Binding Visible, Converter={mmp:BoolToVisibleHiddenConverter}}"
              BorderBrush="{StaticResource Macad.Brushes.HudElement.Border}"
              Background="#01000000">
 
-    <StackPanel Margin="10,2,10,5">
+    <StackPanel Margin="10,2,10,5"
+                DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type panels:ViewportGridInfo}}}"
+                Visibility="{Binding Visible, Converter={mmp:BoolToVisibleHiddenConverter}}">
 
         <StackPanel.Effect>
             <DropShadowEffect ShadowDepth="0"

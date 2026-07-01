@@ -256,6 +256,7 @@ public sealed class ViewportController : BaseObject, IDisposable
 
         _SyncV3dFromViewport();
         _UpdateRenderMode();
+        RaisePropertyChanged(nameof(IsVisible));
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -288,10 +289,6 @@ public sealed class ViewportController : BaseObject, IDisposable
 
         if (V3dView != null)
         {
-            if (V3dView.IfWindow())
-            {
-                //V3dView.DoMapping();
-            }
             V3dView.Remove();
             V3dView.Dispose();
             V3dView = null;
@@ -318,7 +315,7 @@ public sealed class ViewportController : BaseObject, IDisposable
         V3dView.Update();
         _UpdateFromViewParameterSet();
         V3dView.SetImmediateUpdate(false);
-        V3dView.MustBeResized();
+        Resize();
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -352,7 +349,7 @@ public sealed class ViewportController : BaseObject, IDisposable
         }
 
         _UpdateFromViewParameterSet();
-        V3dView.MustBeResized();
+        Resize();
     }
 
     //--------------------------------------------------------------------------------------------------

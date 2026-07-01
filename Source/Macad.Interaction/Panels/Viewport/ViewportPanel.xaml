@@ -38,23 +38,6 @@
 
             </Border>
 
-            <!--region Active viewport-->
-            <Border x:Name="ActiveViewport"
-                    BorderThickness="2"
-                    Visibility="{Binding HasMultipleViewports, Converter={mmp:BoolToVisibleCollapsedConverter}}"
-                    BorderBrush="{StaticResource Macad.Brushes.Accent}"
-                    Margin="{Binding ActiveViewportMargin}">
-
-                <!--region Grid Info -->
-                <panels:ViewportGridInfo DockPanel.Dock="Bottom"
-                                         VerticalContentAlignment="Bottom"
-                                         HorizontalAlignment="Right"
-                                         Margin="0,0,50,30" />
-                <!--endregion-->
-
-            </Border>
-            <!--endregion-->
-
             <!--region Viewports-->
             <mmp:TemplateItemsControl ItemsSource="{Binding ViewportDefinitions}">
                 <ItemsControl.ItemsPanel>
@@ -89,7 +72,24 @@
                                                    Stroke="DimGray"
                                                    StrokePosition="Outside"
                                                    Opacity="0.7"/>
-                        </Grid>
+
+                            <panels:ViewportGridInfo Visibility="{Binding ViewportController.IsActive, Converter={mmp:BoolToVisibleCollapsedConverter}}"
+                                                     VerticalContentAlignment="Bottom"
+                                                     HorizontalAlignment="Right"
+                                                     Margin="0,0,50,30" />
+
+                        <Border x:Name="ActiveViewport"
+                                    BorderThickness="2"
+                                    BorderBrush="{StaticResource Macad.Brushes.Accent}">
+                            <Border.Visibility>
+                                <MultiBinding Converter="{mmp:BooleanAndToVisibleCollapsedMultiConverter}">
+                                    <Binding Path="DataContext.HasMultipleViewports" RelativeSource="{RelativeSource AncestorType=mmp:TemplateItemsControl}" />
+                                    <Binding Path="ViewportController.IsActive" />
+                                </MultiBinding>
+                            </Border.Visibility>
+                        </Border>
+
+                    </Grid>
                     </DataTemplate>
                 </mmp:TemplateItemsControl.ItemTemplate>
             </mmp:TemplateItemsControl>

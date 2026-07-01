@@ -376,8 +376,7 @@ public sealed class WorkspaceController : BaseObject, IContextMenuItemProvider, 
     {
         if (_ViewportControllers.Any(vc => vc.Viewport == sender))
         {
-            _RecalculateGridSize();
-            Invalidate();
+            _OnGridChanged();
         }
     }
 
@@ -1012,7 +1011,7 @@ public sealed class WorkspaceController : BaseObject, IContextMenuItemProvider, 
         {
             maxPixelSize = Math.Max(viewportController.PixelSize, maxPixelSize);
             var screenSize = viewportController.ScreenSize;
-            minScreenWidth = Math.Min(screenSize.Width* maxPixelSize, minScreenWidth);
+            minScreenWidth = Math.Min(screenSize.Width * maxPixelSize, minScreenWidth);
             viewportController.ScreenToPoint(plane, 0,                0,                 out corners[0]);
             viewportController.ScreenToPoint(plane, 0,                screenSize.Height, out corners[1]);
             viewportController.ScreenToPoint(plane, screenSize.Width, screenSize.Height, out corners[2]);
@@ -1060,7 +1059,6 @@ public sealed class WorkspaceController : BaseObject, IContextMenuItemProvider, 
         if (!_VisualGridMultiplier.IsEqual(newGridStepMultiplier, 0.01))
         {
             VisualGridMultiplier = newGridStepMultiplier;
-            _GridNeedsUpdate = true;
         }
 
         // Take the maximum, overprovision by 10, and clamp to a (unrealistic) maximum
