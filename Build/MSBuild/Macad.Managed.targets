@@ -27,6 +27,7 @@
         File="$(VersionInfoCppFile)"
         Lines="@(AssemblyInfoLines)"
         Overwrite="true"
+        WriteOnlyWhenDifferent="true"
         Encoding="UTF-8" />
   </Target>
 

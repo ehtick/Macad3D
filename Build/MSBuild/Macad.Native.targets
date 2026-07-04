@@ -89,7 +89,8 @@
   </ItemGroup>
 
   <Target Name="GenerateVersionInfoRc" 
-          BeforeTargets="ResourceCompile">
+          BeforeTargets="ResourceCompile"
+          Outputs="$(VersionInfoRcFile)">
     <PropertyGroup>
       <VersionCommas>$([System.String]::Copy('$(FileVersion)').Replace('.', ','))</VersionCommas>
     </PropertyGroup>
@@ -122,6 +123,7 @@
         File="$(VersionInfoRcFile)"
         Lines="@(VersionInfoLines)"
         Overwrite="true"
+        WriteOnlyWhenDifferent="true"
         Encoding="UTF-8" />
   </Target>
 
