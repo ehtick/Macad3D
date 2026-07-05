@@ -58,14 +58,11 @@ public class SketchTests
     //--------------------------------------------------------------------------------------------------
 
     [Test]
-    public void NamedSubmesh()
+    public void SubshapeReferences()
     {
-        var shape = CreateSketch(SketchType.Curve);
-        Assert.IsNotNull(shape);
-
-        var subshape = shape.GetSubshapeReference(SubshapeType.Edge, 0);
-        Assert.AreEqual("seg", subshape.Name);
-        Assert.AreEqual(0, subshape.Index);
+        var shape = CreateSketch(SketchType.MultiCurve);
+        shape.Guid = TestData.CreateGuid(1);
+        AssertHelper.IsSameSubshapeReferences(shape, Path.Combine(_BasePath, "SubshapeReferences"));
     }
 
     //--------------------------------------------------------------------------------------------------

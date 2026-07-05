@@ -813,7 +813,7 @@ public sealed class Sketch : Shape2D
         }
 
         // Create edges
-        var freeSegmentEdges = new Dictionary<SketchSegment, TopoDS_Edge>();
+        Dictionary<int, TopoDS_Edge> freeSegmentEdges = new();
         foreach (var segmentKvp in _Segments)
         {
             var segment = segmentKvp.Value;
@@ -826,8 +826,7 @@ public sealed class Sketch : Shape2D
                 Messages.Warning($"The segment {segmentKvp.Key} of type {segment.GetType().Name} failed creating an edge.");
                 continue;
             }
-            freeSegmentEdges.Add(segment, segEdge);
-            AddNamedSubshape("seg", segEdge, segmentKvp.Key);
+            freeSegmentEdges.Add(segmentKvp.Key, segEdge);
         }
 
         // Create wires
@@ -835,27 +834,28 @@ public sealed class Sketch : Shape2D
         while (freeSegmentEdges.Any())
         {
             var nextSegmentEdge = freeSegmentEdges.First();
-            var frontSegment = nextSegmentEdge.Key;
+            var frontSegment = _Segments[nextSegmentEdge.Key];
             freeSegmentEdges.Remove(nextSegmentEdge.Key);
 
             var makeWire = new BRepBuilderAPI_MakeWire(nextSegmentEdge.Value);
+            AddNamedSubshape("seg", makeWire.Edge(), nextSegmentEdge.Key);
 
             if ((frontSegment.StartPoint != -1) || (frontSegment.EndPoint != -1))
             {
                 var backSegment = frontSegment;
                 while (freeSegmentEdges.Any())
                 {
-                    nextSegmentEdge = freeSegmentEdges.FirstOrDefault(kvp => kvp.Key.IsConnected(frontSegment));
+                    nextSegmentEdge = freeSegmentEdges.FirstOrDefault(kvp => _Segments[kvp.Key].IsConnected(frontSegment));
                     if (nextSegmentEdge.Value != null)
                     {
-                        frontSegment = nextSegmentEdge.Key;
+                        frontSegment = _Segments[nextSegmentEdge.Key];
                     }
                     else
                     {
-                        nextSegmentEdge = freeSegmentEdges.FirstOrDefault(kvp => kvp.Key.IsConnected(backSegment));
+                        nextSegmentEdge = freeSegmentEdges.FirstOrDefault(kvp => _Segments[kvp.Key].IsConnected(backSegment));
                         if (nextSegmentEdge.Value != null)
                         {
-                            backSegment = nextSegmentEdge.Key;
+                            backSegment = _Segments[nextSegmentEdge.Key];
                         }
                         else
                         {
@@ -865,6 +865,7 @@ public sealed class Sketch : Shape2D
                     }
 
                     makeWire.Add(nextSegmentEdge.Value);
+                    AddNamedSubshape("seg", makeWire.Edge(), nextSegmentEdge.Key);
                     freeSegmentEdges.Remove(nextSegmentEdge.Key);
                 }
             }
