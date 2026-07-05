@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Macad.Common;
+using Macad.Common.Serialization;
 using Macad.Core;
 using Macad.Core.Shapes;
 using Macad.Occt;
@@ -13,6 +14,14 @@ using NUnit.Framework;
 using Macad.Occt.Helper;
 
 namespace Macad.Test.Utils;
+
+//--------------------------------------------------------------------------------------------------
+
+[SerializeType]
+record SubshapeReferenceData([property: SerializeMember] SubshapeReference Reference, [property: SerializeMember] Pnt CenterOfMass);
+
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
 public static class AssertHelper
 {
@@ -51,9 +60,9 @@ public static class AssertHelper
 
     //--------------------------------------------------------------------------------------------------
 
-    public static void IsSameViewport(string referenceFilename, double tolerance=0.05)
+    public static void IsSameViewport(string referenceFilename, double tolerance = 0.05)
     {
-        if(Context.Current.WorkspaceController.NeedsRedraw || Context.Current.WorkspaceController.NeedsImmediateRedraw)
+        if (Context.Current.WorkspaceController.NeedsRedraw || Context.Current.WorkspaceController.NeedsImmediateRedraw)
             Context.Current.WorkspaceController.Invalidate(!Context.Current.WorkspaceController.NeedsRedraw, true);
 
         var fullPath = Path.Combine(TestData.TestDataDirectory, referenceFilename);
@@ -101,7 +110,7 @@ public static class AssertHelper
 
     //--------------------------------------------------------------------------------------------------
 
-    public static void IsSameFile(string originalPath, string testResultPath, int skipBytes=0)
+    public static void IsSameFile(string originalPath, string testResultPath, int skipBytes = 0)
     {
         Debug.Assert(originalPath != testResultPath);
 
@@ -165,7 +174,7 @@ public static class AssertHelper
     [Flags]
     public enum TextCompareFlags
     {
-        None                 = 0,
+        None = 0,
         IgnoreFloatPrecision = 1 << 0
     }
 
@@ -252,7 +261,7 @@ public static class AssertHelper
     }
 
     //--------------------------------------------------------------------------------------------------
-    
+
     public static void IsSameText(string[] refLines, string[] testLines, TextCompareFlags flags = TextCompareFlags.None)
     {
         if (!_IsSameText(refLines, testLines, flags, out string message))
@@ -269,14 +278,15 @@ public static class AssertHelper
     {
         int __FindFrontBorderOfFloat(string line, int startindex)
         {
-            int index = startindex-1;
+            int index = startindex - 1;
             while (index > 0)
             {
                 if (!_FloatChars.Contains(line[index]))
                     break;
                 index--;
             }
-            return index+1;
+
+            return index + 1;
         }
 
         //--------------------------------------------------------------------------------------------------
@@ -291,7 +301,8 @@ public static class AssertHelper
                     break;
                 index++;
             }
-            return index-1;
+
+            return index - 1;
         }
 
         //--------------------------------------------------------------------------------------------------
@@ -306,7 +317,7 @@ public static class AssertHelper
         }
 
         //--------------------------------------------------------------------------------------------------
-            
+
         // Compare
         if (refLines.Length != testLines.Length)
         {
@@ -318,12 +329,12 @@ public static class AssertHelper
         {
             var testLine = testLines[i];
             var refLine = refLines[i];
-            if(testLine == refLine)
+            if (testLine == refLine)
                 continue;
 
             for (int testCol = 0, refCol = 0; testCol < testLine.Length; testCol++, refCol++)
             {
-                if( refCol < refLine.Length && testLine[testCol] == refLine[refCol])
+                if (refCol < refLine.Length && testLine[testCol] == refLine[refCol])
                     continue;
 
                 if (flags.HasFlag(TextCompareFlags.IgnoreFloatPrecision))
@@ -341,7 +352,8 @@ public static class AssertHelper
                         }
                     }
                 }
-                message = $"File differs at line {i+1} at position {testCol}.";
+
+                message = $"File differs at line {i + 1} at position {testCol}.";
                 return false;
             }
         }
@@ -385,6 +397,7 @@ public static class AssertHelper
             Assert.AreEqual(0, result, "The resulted image differs: " + resultFilePath);
             return;
         }
+
         differ.Dispose();
         resultImage.Clear();
         resultImage.Dispose();
@@ -407,6 +420,7 @@ public static class AssertHelper
                 return;
             }
         }
+
         Assert.That(shape.ShapeType() == TopAbs_ShapeEnum.SOLID, $"Shapetype is not solid, but {shape.ShapeType()}");
 
         BRepCheck_Analyzer analyzer = new(shape);
@@ -443,6 +457,67 @@ public static class AssertHelper
     public static void IsManifold(Shape shape)
     {
         IsManifold(shape.GetBRep());
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    public static void IsSameSubshapeReferences(Shape shape, string referenceFile)
+    {
+        bool failed = false;
+
+        Dictionary<string,Pnt> subshapes = [];
+        foreach (var face in shape.GetBRep().Faces())
+        {
+            var currentSubshape = shape.GetSubshapeReference(face);
+            subshapes.Add(currentSubshape.ToString(), face.CenterOfMass());
+        }
+        foreach (var edge in shape.GetBRep().Edges())
+        {
+            var currentSubshape = shape.GetSubshapeReference(edge);
+            BRepLib.BuildCurve3d(edge);
+            subshapes.Add(currentSubshape.ToString(), edge.CenterOfMass());
+        }
+
+        var expectedList = TestData.GetTestDataSerialized<Dictionary<string, Pnt>>(referenceFile + ".txt");
+        if(expectedList == null)
+        {
+            TestData.WriteTestResultSerialized(subshapes, referenceFile + "_TestResult.txt");
+            Assert.Fail("Reference file not found: " + referenceFile);
+        }
+
+        foreach (var (reference, com) in subshapes)
+        {
+            if (!expectedList.TryGetValue(reference, out var expectedCom))
+            {
+                failed = true;
+                TestContext.WriteLine($"Unexpected subshape reference found: {reference} / {com}");
+                continue;
+            }
+
+            if (!expectedCom.IsEqual(com, 1e-6))
+            {
+                failed = true;
+                TestContext.WriteLine($"Center of mass does not match for reference: {reference}. CoM: {com}. Expected: {expectedCom}");
+                continue;
+            }
+
+            expectedList.Remove(reference);
+        }
+
+        if (expectedList.Count > 0)
+        {
+            failed = true;
+            foreach (var (reference, com) in expectedList)
+            {
+                TestContext.WriteLine($"Missing subshape reference: {reference}. CoM: {com}");
+            }
+        }
+
+        if (failed)
+        {
+            TestData.WriteTestResultSerialized(subshapes, referenceFile + "_TestResult.txt");
+            Assert.Fail("Subshape references do not match.");
+        }
     }
 
     //--------------------------------------------------------------------------------------------------

@@ -33,7 +33,7 @@ public partial class Configuration
         /*"BRepApprox", "BRepClass", "BRepMAT2d", "BRepTopAdaptor", "Bisector", "MAT", "MAT2d", */
         "BRepClass3d", "BRepBndLib", "BRepBuilderAPI", "BRepGProp", "BRepCheck", "BRepExtrema", "BRepIntCurveSurface", "BRepLib", "IntCurvesFace",
         /* -- TKPrim -- */
-        /*"BRepPrim", "BRepSweep", "Sweep",*/ "BRepPrimAPI",
+        "BRepPrim", /*"BRepSweep", "Sweep",*/ "BRepPrimAPI",
         /* -- TKBO -- */
         /*"BOPCol", "BOPDS", "BOPTools", "IntTools",*/ "BOPAlgo", "BRepAlgoAPI",
         /* -- TKBool -- */

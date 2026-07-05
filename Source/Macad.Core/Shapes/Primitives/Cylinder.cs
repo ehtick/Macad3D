@@ -1,7 +1,7 @@
-﻿using System;
-using Macad.Common;
+﻿using Macad.Common;
 using Macad.Common.Serialization;
 using Macad.Occt;
+using System;
 
 namespace Macad.Core.Shapes;
 
@@ -129,8 +129,11 @@ public sealed class Cylinder : Shape
         }
 
         BRep = brep;
+        SubshapeReferenceUtils.CreateSubshapeNames(makeCylinder.Cylinder(), AddNamedSubshape);
         return base.MakeInternal(flags);
     }
+    
+    //--------------------------------------------------------------------------------------------------
 
     #endregion
 }

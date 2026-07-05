@@ -94,7 +94,10 @@ public:
     /// Init a box with Ax2 (the left corner and the theAxes) and size theDX, theDY, theDZ.
     /// </summary>
     void Init(Macad::Occt::Ax2 theAxes, double theDX, double theDY, double theDZ);
-    /* Method skipped due to unknown mapping: BRepPrim_Wedge Wedge() */
+    /// <summary>
+    /// Returns the internal algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Wedge^ Wedge();
     /// <summary>
     /// Stores the solid in myShape.
     /// </summary>
@@ -324,7 +327,10 @@ public:
     /// Returns the algorithm.
     /// </summary>
     System::IntPtr OneAxis();
-    /* Method skipped due to unknown mapping: BRepPrim_Cone Cone() */
+    /// <summary>
+    /// Returns the algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Cone^ Cone();
 }; // class BRepPrimAPI_MakeCone
 
 //---------------------------------------------------------------------
@@ -433,7 +439,10 @@ public:
     /// Returns the algorithm.
     /// </summary>
     System::IntPtr OneAxis();
-    /* Method skipped due to unknown mapping: BRepPrim_Cylinder Cylinder() */
+    /// <summary>
+    /// Returns the algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Cylinder^ Cylinder();
 }; // class BRepPrimAPI_MakeCylinder
 
 //---------------------------------------------------------------------
@@ -913,7 +922,10 @@ public:
     /// Returns the algorithm.
     /// </summary>
     System::IntPtr OneAxis();
-    /* Method skipped due to unknown mapping: BRepPrim_Revolution Revolution() */
+    /// <summary>
+    /// Returns the algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Revolution^ Revolution();
 }; // class BRepPrimAPI_MakeRevolution
 
 //---------------------------------------------------------------------
@@ -1113,7 +1125,10 @@ public:
     /// Returns the algorithm.
     /// </summary>
     System::IntPtr OneAxis();
-    /* Method skipped due to unknown mapping: BRepPrim_Sphere Sphere() */
+    /// <summary>
+    /// Returns the algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Sphere^ Sphere();
 }; // class BRepPrimAPI_MakeSphere
 
 //---------------------------------------------------------------------
@@ -1286,7 +1301,10 @@ public:
     /// Returns the algorithm.
     /// </summary>
     System::IntPtr OneAxis();
-    /* Method skipped due to unknown mapping: BRepPrim_Torus Torus() */
+    /// <summary>
+    /// Returns the algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Torus^ Torus();
 }; // class BRepPrimAPI_MakeTorus
 
 //---------------------------------------------------------------------
@@ -1342,7 +1360,10 @@ public:
     /// Make a wedge. The face at dy is xmin,zmin xmax,zmax
     /// </summary>
     BRepPrimAPI_MakeWedge(Macad::Occt::Ax2 Axes, double dx, double dy, double dz, double xmin, double zmin, double xmax, double zmax);
-    /* Method skipped due to unknown mapping: BRepPrim_Wedge Wedge() */
+    /// <summary>
+    /// Returns the internal algorithm.
+    /// </summary>
+    Macad::Occt::BRepPrim_Wedge^ Wedge();
     /// <summary>
     /// Stores the solid in myShape.
     /// </summary>

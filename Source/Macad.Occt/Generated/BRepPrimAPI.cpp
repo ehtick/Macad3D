@@ -6,6 +6,7 @@
 using namespace System::Runtime::InteropServices; // for class Marshal
 
 #include "gp.h"
+#include "BRepPrim.h"
 #include "Message.h"
 #include "TopoDS.h"
 #include "BRepOffsetAPI.h"
@@ -73,6 +74,13 @@ void Macad::Occt::BRepPrimAPI_MakeBox::Init(Macad::Occt::Ax2 theAxes, double the
 {
     pin_ptr<Macad::Occt::Ax2> pp_theAxes = &theAxes;
     ((::BRepPrimAPI_MakeBox*)_NativeInstance)->Init(*(gp_Ax2*)pp_theAxes, theDX, theDY, theDZ);
+}
+
+Macad::Occt::BRepPrim_Wedge^ Macad::Occt::BRepPrimAPI_MakeBox::Wedge()
+{
+    ::BRepPrim_Wedge* _result = new ::BRepPrim_Wedge();
+    *_result = ((::BRepPrimAPI_MakeBox*)_NativeInstance)->Wedge();
+    return _result==nullptr ? nullptr : gcnew Macad::Occt::BRepPrim_Wedge(_result);
 }
 
 void Macad::Occt::BRepPrimAPI_MakeBox::Build(Macad::Occt::Message_ProgressRange^ theRange)
@@ -228,6 +236,12 @@ System::IntPtr Macad::Occt::BRepPrimAPI_MakeCone::OneAxis()
     return System::IntPtr(_result);
 }
 
+Macad::Occt::BRepPrim_Cone^ Macad::Occt::BRepPrimAPI_MakeCone::Cone()
+{
+    ::BRepPrim_Cone& _result = ((::BRepPrimAPI_MakeCone*)_NativeInstance)->Cone();
+    return gcnew Macad::Occt::BRepPrim_Cone(_result);
+}
+
 
 
 //---------------------------------------------------------------------
@@ -264,6 +278,12 @@ System::IntPtr Macad::Occt::BRepPrimAPI_MakeCylinder::OneAxis()
 {
     void* _result = ((::BRepPrimAPI_MakeCylinder*)_NativeInstance)->OneAxis();
     return System::IntPtr(_result);
+}
+
+Macad::Occt::BRepPrim_Cylinder^ Macad::Occt::BRepPrimAPI_MakeCylinder::Cylinder()
+{
+    ::BRepPrim_Cylinder& _result = ((::BRepPrimAPI_MakeCylinder*)_NativeInstance)->Cylinder();
+    return gcnew Macad::Occt::BRepPrim_Cylinder(_result);
 }
 
 
@@ -587,6 +607,12 @@ System::IntPtr Macad::Occt::BRepPrimAPI_MakeRevolution::OneAxis()
     return System::IntPtr(_result);
 }
 
+Macad::Occt::BRepPrim_Revolution^ Macad::Occt::BRepPrimAPI_MakeRevolution::Revolution()
+{
+    ::BRepPrim_Revolution& _result = ((::BRepPrimAPI_MakeRevolution*)_NativeInstance)->Revolution();
+    return gcnew Macad::Occt::BRepPrim_Revolution(_result);
+}
+
 
 
 //---------------------------------------------------------------------
@@ -679,6 +705,12 @@ System::IntPtr Macad::Occt::BRepPrimAPI_MakeSphere::OneAxis()
     return System::IntPtr(_result);
 }
 
+Macad::Occt::BRepPrim_Sphere^ Macad::Occt::BRepPrimAPI_MakeSphere::Sphere()
+{
+    ::BRepPrim_Sphere& _result = ((::BRepPrimAPI_MakeSphere*)_NativeInstance)->Sphere();
+    return gcnew Macad::Occt::BRepPrim_Sphere(_result);
+}
+
 
 
 //---------------------------------------------------------------------
@@ -743,6 +775,12 @@ System::IntPtr Macad::Occt::BRepPrimAPI_MakeTorus::OneAxis()
     return System::IntPtr(_result);
 }
 
+Macad::Occt::BRepPrim_Torus^ Macad::Occt::BRepPrimAPI_MakeTorus::Torus()
+{
+    ::BRepPrim_Torus& _result = ((::BRepPrimAPI_MakeTorus*)_NativeInstance)->Torus();
+    return gcnew Macad::Occt::BRepPrim_Torus(_result);
+}
+
 
 
 //---------------------------------------------------------------------
@@ -773,6 +811,13 @@ Macad::Occt::BRepPrimAPI_MakeWedge::BRepPrimAPI_MakeWedge(Macad::Occt::Ax2 Axes,
 {
     pin_ptr<Macad::Occt::Ax2> pp_Axes = &Axes;
     _NativeInstance = new ::BRepPrimAPI_MakeWedge(*(gp_Ax2*)pp_Axes, dx, dy, dz, xmin, zmin, xmax, zmax);
+}
+
+Macad::Occt::BRepPrim_Wedge^ Macad::Occt::BRepPrimAPI_MakeWedge::Wedge()
+{
+    ::BRepPrim_Wedge* _result = new ::BRepPrim_Wedge();
+    *_result = ((::BRepPrimAPI_MakeWedge*)_NativeInstance)->Wedge();
+    return _result==nullptr ? nullptr : gcnew Macad::Occt::BRepPrim_Wedge(_result);
 }
 
 void Macad::Occt::BRepPrimAPI_MakeWedge::Build(Macad::Occt::Message_ProgressRange^ theRange)

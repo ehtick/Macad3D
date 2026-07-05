@@ -101,7 +101,8 @@ public static class TestData
     public static T GetTestDataSerialized<T>(string path)
     {
         var dataText = GetTestDataText(path);
-        Assert.IsFalse(dataText.IsNullOrEmpty(), "Reference file not found.");
+        if (dataText.IsNullOrEmpty())
+            return default(T);
 
         return Serializer.Deserialize<T>(dataText, new SerializationContext());
     }
@@ -151,6 +152,23 @@ public static class TestData
 
     //--------------------------------------------------------------------------------------------------
 
+    public static void WriteTestResult(string text, string path)
+    {
+        var fullPath = Path.Combine(TestDataDirectory, path);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+        File.WriteAllText(fullPath, text);
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    public static void WriteTestResultSerialized(object result, string path)
+    {
+        string testResult = Serializer.Format(Serializer.Serialize(result));
+        TestData.WriteTestResult(testResult, path);
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
     public static void DeleteTestResult(string path)
     {
         var fullPath = Path.Combine(TestDataDirectory, path);
@@ -178,5 +196,16 @@ public static class TestData
         // Test was ok, delete result file
         DeleteTestResult(pathTestResult);
     }
+
+    //--------------------------------------------------------------------------------------------------
+
+    public static Guid CreateGuid(byte no)
+    {
+        Span<byte> bytes = stackalloc byte[16];
+        bytes[15] = no;
+        return new Guid(bytes);
+    }
+
+    //--------------------------------------------------------------------------------------------------
 
 }

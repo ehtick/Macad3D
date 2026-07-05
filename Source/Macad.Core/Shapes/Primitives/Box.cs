@@ -116,10 +116,13 @@ public sealed class Box : Shape
         var dimZ = DimensionZ != 0.0 ? DimensionZ : 0.001;
 
         var makeBox = new BRepPrimAPI_MakeBox(dimX, dimY, dimZ);
-        BRep = makeBox.Solid();
 
+        BRep = makeBox.Solid();
+        SubshapeReferenceUtils.CreateSubshapeNames(makeBox.Wedge(), AddNamedSubshape);
         return base.MakeInternal(flags);
     }
+
+    //--------------------------------------------------------------------------------------------------
 
     #endregion
 

@@ -201,7 +201,14 @@ public static class TopoDSShapeExtensions
     public static Pnt CenterOfMass(this TopoDS_Shape shape)
     {
         GProp_GProps massProps = new GProp_GProps();
-        BRepGProp.SurfaceProperties(shape, massProps);
+        if (shape.ShapeType() == TopAbs_ShapeEnum.EDGE)
+        {
+            BRepGProp.LinearProperties(shape, massProps);
+        }
+        else
+        {
+            BRepGProp.SurfaceProperties(shape, massProps);
+        }
         return massProps.CentreOfMass();
     }
 

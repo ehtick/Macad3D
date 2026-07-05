@@ -39,6 +39,7 @@ public class ClassWrapper : TypeWrapper
         resultAssign = "";
         returnValue = "";
         var cd = md.Type.Element as ClassDecl;
+        var constructor = cd?.Methods.FirstOrDefault(kfd => kfd.IsConstructor && kfd.Parameters.All(pd => pd.HasDefault));
 
         if (cd is { IsTransient: true } && md.Type.IsReference)
         {
@@ -66,15 +67,23 @@ public class ClassWrapper : TypeWrapper
                 returnValue = $"_result==nullptr ? nullptr : gcnew {Context.Current.Settings.Namespace}::{cd?.FullName ?? md.Type.Name}(_result)";
             }
         }
-        else 
+        else if (md.Type.IsReference && !(cd.Methods.Exists(md => md.Name == "=") && constructor != null))
+        {
+            if (md.Type.IsConst)
+            {
+                resultAssign = $"const ::{md.Type.Name}& _result = ";
+                returnValue = $"gcnew {Context.Current.Settings.Namespace}::{cd?.FullName ?? md.Type.Name}(const_cast<::{md.Type.Name}&>(_result))";
+            }
+            else
+            {
+                resultAssign = $"::{md.Type.Name}& _result = ";
+                returnValue = $"gcnew {Context.Current.Settings.Namespace}::{cd?.FullName ?? md.Type.Name}(_result)";
+            }
+        }
+        else
         {
             // Check if there has any constructors we can fill with value types
-            if (cd == null || cd.HasAbstractFunctions || cd.IsAbstract)
-            {
-                return false;
-            }
-            var constructor = cd.Methods.FirstOrDefault(kfd => kfd.IsConstructor && kfd.Parameters.All(pd => pd.HasDefault));
-            if (constructor == null)
+            if (cd == null || cd.HasAbstractFunctions || cd.IsAbstract || constructor == null)
             {
                 return false;
             }

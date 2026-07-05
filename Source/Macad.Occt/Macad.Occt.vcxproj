@@ -97,6 +97,7 @@
     <ClCompile Include="Generated\BRepClass3d.cpp" />
     <ClCompile Include="Generated\BRepFill.cpp" />
     <ClCompile Include="Generated\BRepOffset.cpp" />
+    <ClCompile Include="Generated\BRepPrim.cpp" />
     <ClCompile Include="Generated\GeomPlate.cpp" />
     <ClCompile Include="Generated\IntAna2d.cpp" />
     <ClCompile Include="Generated\Message.cpp" />
@@ -122,6 +123,7 @@
     <ClInclude Include="BaseClass.h" />
     <ClInclude Include="Extensions\TopoDS_Ex.h" />
     <ClInclude Include="Generated\BRepFill.h" />
+    <ClInclude Include="Generated\BRepPrim.h" />
     <ClInclude Include="IndexEnumerator.h" />
     <ClInclude Include="IteratorEnumerator.h" />
     <ClInclude Include="Extensions\BRep_Ex.h" />

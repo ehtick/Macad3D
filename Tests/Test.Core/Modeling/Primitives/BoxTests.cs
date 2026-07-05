@@ -23,7 +23,19 @@ public class BoxTests
         };
 
         Assert.IsTrue(shape.Make(Shape.MakeFlags.None));
-
         Assert.IsTrue(ModelCompare.CompareShape(shape, Path.Combine(_BasePath, "Simple")));
     }
+
+    //--------------------------------------------------------------------------------------------------
+
+    [Test]
+    public void SubshapeReferences()
+    {
+        var shape = Box.Create(10, 10, 10);
+        shape.Guid = TestData.CreateGuid(1);
+        AssertHelper.IsSameSubshapeReferences(shape, Path.Combine(_BasePath, "SubshapeReferences"));
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
 }

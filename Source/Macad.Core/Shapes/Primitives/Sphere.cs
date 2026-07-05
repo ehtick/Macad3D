@@ -181,6 +181,7 @@ public sealed class Sphere : Shape
         }
 
         BRep = makeSphere.Solid();
+        SubshapeReferenceUtils.CreateSubshapeNames(makeSphere.Sphere(), AddNamedSubshape);
         return base.MakeInternal(flags);
     }
 

@@ -791,6 +791,17 @@ namespace Occt
     enum class BRepLib_WireError;
     ref class IntCurvesFace_Intersector;
     ref class IntCurvesFace_ShapeIntersector;
+    ref class BRepPrim_Builder;
+    ref class BRepPrim_OneAxis;
+    ref class BRepPrim_Revolution;
+    ref class BRepPrim_Cone;
+    ref class BRepPrim_Cylinder;
+    ref class BRepPrim_FaceBuilder;
+    ref class BRepPrim_GWedge;
+    ref class BRepPrim_Sphere;
+    ref class BRepPrim_Torus;
+    ref class BRepPrim_Wedge;
+    enum class BRepPrim_Direction;
     ref class BRepPrimAPI_MakeBox;
     ref class BRepPrimAPI_MakeOneAxis;
     ref class BRepPrimAPI_MakeCone;

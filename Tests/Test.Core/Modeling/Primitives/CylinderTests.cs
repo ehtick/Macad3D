@@ -76,4 +76,25 @@ public class CylinderTests
 
     //--------------------------------------------------------------------------------------------------
 
+    [Test]
+    public void SubshapeReferences()
+    {
+        var shape = Cylinder.Create(10, 10);
+        shape.Guid = TestData.CreateGuid(1);
+        AssertHelper.IsSameSubshapeReferences(shape, Path.Combine(_BasePath, "SubshapeReferences"));
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
+    [Test]
+    public void SubshapeReferences_Segment()
+    {
+        var shape = Cylinder.Create(10, 10);
+        shape.SegmentAngle = 120;
+        shape.Guid = TestData.CreateGuid(1);
+        AssertHelper.IsSameSubshapeReferences(shape, Path.Combine(_BasePath, "SubshapeReferences_Segment"));
+    }
+
+    //--------------------------------------------------------------------------------------------------
+
 }

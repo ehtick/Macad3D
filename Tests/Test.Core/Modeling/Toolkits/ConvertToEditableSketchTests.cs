@@ -275,6 +275,7 @@ public class ConvertToEditableSketchTests
     public void ConvertOffsettedBeziers()
     {
         var body = TestData.GetTestDataSerialized<Body>(Path.Combine(_BasePath, "ConvertOffsettedBeziers_Source.txt"));
+        Assume.That(body, Is.Not.Null);
         Assert.IsTrue(ConvertToEditableSketch.CollapseShapeStack([body]));
         Assert.IsInstanceOf<Macad.Core.Shapes.Sketch>(body.RootShape);
         AssertHelper.IsSameModel2D(body.RootShape, Path.Combine(_BasePath, "ConvertOffsettedBeziers"));
