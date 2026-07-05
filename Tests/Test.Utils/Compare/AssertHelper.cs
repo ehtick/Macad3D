@@ -463,6 +463,9 @@ public static class AssertHelper
 
     public static void IsSameSubshapeReferences(Shape shape, string referenceFile)
     {
+        string resultFile = referenceFile + "_TestResult.txt";
+        TestData.DeleteTestResult(resultFile);
+
         bool failed = false;
 
         Dictionary<string,Pnt> subshapes = [];
@@ -515,7 +518,7 @@ public static class AssertHelper
 
         if (failed)
         {
-            TestData.WriteTestResultSerialized(subshapes, referenceFile + "_TestResult.txt");
+            TestData.WriteTestResultSerialized(subshapes, resultFile);
             Assert.Fail("Subshape references do not match.");
         }
     }
